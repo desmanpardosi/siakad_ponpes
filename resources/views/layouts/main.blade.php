@@ -270,7 +270,7 @@
 					<span class="block">Anda login sebagai <b>{{ Auth::user()->username }}</b> (<a href="#" onclick="$('#logout').submit();">Logout</a>)</span>
 					@endif
 					<span class="block">
-						Copyright &copy; {{ date('Y') }}.
+						Copyright &copy; {{ date('Y') }} <a href="https://www.dhp.co.id">PT. DHP DIGITAL TEKNOLOGI</a>.
 					</span>
 				</div>
 			</div>
