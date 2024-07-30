@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8">
+    <title>Masukkan Nomor WhatsApp</title>
+    <style>
+      .content {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        -webkit-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+      }
+
+      input {
+        font-size: 21px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <form action="https://api.whatsapp.com/send/" method="get" target="_blank">
+      <input type="text" name="phone" placeholder="Contoh: 62811666824"/>
+      <input type="submit" value="Chat"/>
+    </form>
+    </div>
+  </body>
+</html>
