@@ -17,6 +17,7 @@
 	<link rel="stylesheet" href="{{ url('/plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}" />
 	<link rel="stylesheet" href="{{ url('/plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}" />
 	<link rel="stylesheet" href="{{ url('/plugins/select2/css/select2.min.css') }}">
+	<link rel="stylesheet" href="{{ url('/assets/css/datepicker.min.css') }}" />
 	@hasSection('custom-css')
 	@yield('custom-css')
 	@endif
@@ -94,7 +95,7 @@
 
 					<b class="arrow"></b>
 				</li>
-				@if(Auth::check() && Auth::user()->role == 0 || Auth::check() && Auth::user()->role == 1)
+				@if(Auth::check() && Auth::user()->role == 2)
 				<li class="{{ (Route::current()->getName() == 'presensi')? 'active highlight':''}}">
 					<a href="{{ route('presensi') }}">
 						<i class="menu-icon fa fa-calendar-check-o"></i>
@@ -103,6 +104,8 @@
 
 					<b class="arrow"></b>
 				</li>
+				@endif
+				@if(Auth::check() && Auth::user()->role == 0 || Auth::check() && Auth::user()->role == 1)
 				<li class="{{ (Route::current()->getName() == 'master.jadwal') || (Route::current()->getName() == 'master.jp') || (Route::current()->getName() == 'master.mapel') || (Route::current()->getName() == 'master.kelas') || (Route::current()->getName() == 'master.ruangan') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pemasukan.kategori') || (Route::current()->getName() == 'master.santri') || (Route::current()->getName() == 'master.staff') || (Route::current()->getName() == 'master.guru') || (Route::current()->getName() == 'master.users') || (Route::current()->getName() == 'master.assets')? 'active highlight':''}}">
 					<a href="#" class="dropdown-toggle">
 						<i class="menu-icon fa fa-folder"></i>

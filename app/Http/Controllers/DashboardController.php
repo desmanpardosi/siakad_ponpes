@@ -483,29 +483,38 @@ class DashboardController extends Controller
 
     public function santri(Request $req)
     {
-        $search = $req->search;
-
         $santri = DB::table("santri")->select("santri.*", "kelas.kelas_semester")
                     ->LeftJoin("kelas", "kelas.kelas_id", "=", "santri.kelas_id");
-        if (!empty($search)) {
-            $santri = $santri->where("santri.nama_lengkap", "LIKE", "%" . $search . "%")
-                    ->orWhere("santri.nis", "LIKE", "%" . $search . "%")
-                    ->orWhere("santri.nik", "LIKE", "%" . $search . "%")
-                    ->orWhere("santri.nisn", "LIKE", "%" . $search . "%")
-                    ->orderBy("santri.nama_lengkap", "asc")            
-                    ->paginate(25);
 
-        } else {
-            $santri = $santri->orderBy("santri.nama_lengkap", "asc");
-
+        if($req->format == "json"){
             if(!empty($req->kelas)){
                 $santri = $santri->where("santri.kelas_id", $req->kelas);
             }
 
-            $santri = $santri->paginate(25);
-        }
+            $santri = $santri->get();
+            return response()->json($santri);
+        } else {
+            $search = $req->search;
+            if(!empty($search)) {
+                $santri = $santri->where("santri.nama_lengkap", "LIKE", "%" . $search . "%")
+                        ->orWhere("santri.nis", "LIKE", "%" . $search . "%")
+                        ->orWhere("santri.nik", "LIKE", "%" . $search . "%")
+                        ->orWhere("santri.nisn", "LIKE", "%" . $search . "%")
+                        ->orderBy("santri.nama_lengkap", "asc")            
+                        ->paginate(25);
 
-        return View::make('santri')->with(compact("santri"));
+            } else {
+                $santri = $santri->orderBy("santri.nama_lengkap", "asc");
+
+                if(!empty($req->kelas)){
+                    $santri = $santri->where("santri.kelas_id", $req->kelas);
+                }
+
+                $santri = $santri->paginate(25);
+            }
+
+            return View::make('santri')->with(compact("santri"));
+        }
     }
 
     public function santri_save(Request $req){
@@ -1052,71 +1061,97 @@ class DashboardController extends Controller
 
     public function presensi(Request $req)
     {
+        $nama_hari = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu", "Minggu"];
 
-        $mapel = DB::table("mapel")->select("mapel.*", "kelas.kelas_semester", "users.name as guru")
-                ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
-                ->LeftJoin("users", "users.id", "=", "mapel.guru")
-                ->where("mapel.NA", "N");
+        if(empty($req->jadwal_id)){
+            $mapel = DB::table("jadwal_pelajaran")->select("jadwal_pelajaran.*", "jam_pelajaran.*", "mapel.*", "kelas.kelas_semester", "users.name as guru")
+                    ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
+                    ->LeftJoin("mapel", "mapel.mapel_id", "=", "jadwal_pelajaran.mapel_id")
+                    ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+                    ->LeftJoin("users", "users.id", "=", "mapel.guru")
+                    ->where([["jadwal_pelajaran.NA", "N"], ["guru", Auth::user()->id]]);
 
-        if ($req->format == "json") {
-            $mapel = $mapel->get();
-            return response()->json($mapel);
-        } else {
-            $search = $req->search;
+            $mapel = $mapel->orderBy("jam_pelajaran.hari", "asc")
+                    ->orderBy("jam_pelajaran.jam", "asc")
+                    ->orderBy("mapel.mapel", "asc")
+                    ->paginate(25);
 
-            if (!empty($search)) {
-                $mapel = $mapel->where("mapel.mapel", "LIKE", "%" . $search . "%")
-                        ->orderBy("mapel.mapel", "asc")            
-                        ->paginate(25);
-
-            } else {
-                $mapel = $mapel->orderBy("mapel.mapel", "asc")
-                        ->paginate(25);
+            foreach($mapel  as $m){
+                $m->nama_hari = $nama_hari[$m->hari];
             }
 
-            return View::make('mapel')->with(compact("mapel"));
+            return View::make('presensi')->with(compact("mapel"));
+        } else {
+            $jadwal     = DB::table("jadwal_pelajaran")->select("jadwal_pelajaran.*", "jam_pelajaran.*", "mapel.*", "kelas.kelas_semester", "users.name as guru")
+                        ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
+                        ->LeftJoin("mapel", "mapel.mapel_id", "=", "jadwal_pelajaran.mapel_id")
+                        ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+                        ->LeftJoin("users", "users.id", "=", "mapel.guru")
+                        ->where("jadwal_pelajaran.jadwal_id", $req->jadwal_id)
+                        ->first();
+
+            $jadwal->nama_hari = $nama_hari[$jadwal->hari];
+
+            $presensi   = DB::table("presensi")->select("presensi.*", "jadwal_pelajaran.*", "jam_pelajaran.*", "mapel.*", "kelas.kelas_semester", "santri.*", "users.name as guru")
+                        ->LeftJoin("jadwal_pelajaran", "jadwal_pelajaran.jp_id", "=", "presensi.jadwal_id")
+                        ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
+                        ->LeftJoin("mapel", "mapel.mapel_id", "=", "jadwal_pelajaran.mapel_id")
+                        ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+                        ->LeftJoin("santri", "santri.kelas_id", "=", "kelas.kelas_id")
+                        ->LeftJoin("users", "users.id", "=", "mapel.guru")
+                        ->where("presensi.jadwal_id", $req->jadwal_id)
+                        ->orderBy("presensi.presensi_id", "desc")
+                        ->paginate(50);
+
+            return View::make('presensi_input')->with(compact("presensi", "jadwal"));
         }
     }
 
     public function presensi_save(Request $req){
-        $req->id = $req->guru;
         $req->validate([
-            'mapel'     => 'required|exists:mapel,mapel_id',
+            'jadwal'    => 'required|exists:jadwal_pelajaran,jadwal_id',
             'santri'    => 'required|exists:santri,santri_id',
-            'tanggal'   => 'required'
+            'tanggal'   => 'required|date_format:Y-m-d'
         ],
         [
-            'mapel.required'    => 'Mata Pelajaran belum dipilih!',
-            'mapel.exists'      => 'Mata Pelajaran tidak tersedia!',
-            'santri.required'   => 'Santri / Santri Wati belum dipilih!',
-            'santri.exists'     => 'Santri / Santri Wati tidak tersedia!',
+            'jadwal.required'       => 'Jadwal Pelajaran belum dipilih!',
+            'jadwal.exists'         => 'Jadwal Pelajaran tidak ditemukan!',
+            'santri.required'       => 'Santri / Santri Wati belum dipilih!',
+            'santri.exists'         => 'Santri / Santri Wati tidak ditemukan!',
+            'tanggal.required'      => 'Tanggal belum dipilih!',
+            'tanggal.date_format'   => 'Tanggal tidak sesuai format (Y-m-d)!',
         ]);
 
-        $data = [
-            "mapel"         => $req->mapel,
-            "kelas_id"      => $req->kelas,
-            "guru"          => $req->guru,
-            "user_buat"     => Auth::user()->username,
-        ];
+        $exists = DB::table("presensi")->where([["jadwal_id", $req->jadwal], ["santri_id", $req->santri], ["tgl_presensi", $req->tanggal]])->get()->count();
 
-        $add = DB::table('mapel')->insertGetId($data);
+        if($exists == 0){
+            $data = [
+                "jadwal_id"     => $req->jadwal,
+                "santri_id"     => $req->santri,
+                "tgl_presensi"  => $req->tanggal,
+            ];
 
-        if($add){
-            $req->session()->flash('success', "Mata Pelajaran berhasil ditambahkan.");
+            $add = DB::table('presensi')->insertGetId($data);
+
+            if($add){
+                $req->session()->flash('success', "Presensi berhasil ditambahkan.");
+            } else {
+                $req->session()->flash('error', "Presensi gagal ditambahkan!");
+            }
         } else {
-            $req->session()->flash('error', "Mata Pelajaran gagal ditambahkan!");
+            $req->session()->flash('error', "Santri / Santri Wati sudah ditambahkan!");
         }
-        
+
         return redirect()->back();
     }
 
     public function presensi_delete(Request $req)
     {
-        $update = DB::table('absensi')->where("absensi_id", $req->delete_id)->update(["NA" => "Y"]);
+        $update = DB::table('presensi')->where("presensi_id", $req->delete_id)->delete();
         if ($update) {
-            $req->session()->flash('success', "Absensi berhasil dihapus.");
+            $req->session()->flash('success', "Presensi berhasil dihapus.");
         } else {
-            $req->session()->flash('error', "Absensi gagal dihapus!");
+            $req->session()->flash('error', "Presensi gagal dihapus!");
         }
 
         return redirect()->back();

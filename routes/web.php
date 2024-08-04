@@ -12,8 +12,9 @@ Route::get('/pemasukan', [App\Http\Controllers\DashboardController::class, 'pema
 Route::post('/pemasukan', [App\Http\Controllers\DashboardController::class, 'pemasukan_save'])->name('pemasukan.save')->middleware("adminRole");
 Route::get('/pengeluaran', [App\Http\Controllers\DashboardController::class, 'pengeluaran'])->name('pengeluaran')->middleware("adminRole");
 Route::post('/pengeluaran', [App\Http\Controllers\DashboardController::class, 'pengeluaran_save'])->name('pengeluaran.save')->middleware("adminRole");
-Route::get('/presensi', [App\Http\Controllers\DashboardController::class, 'presensi'])->name('presensi');
-Route::post('/presensi', [App\Http\Controllers\DashboardController::class, 'presensi_save'])->name('presensi.save');
+Route::get('/presensi/{jadwal_id?}', [App\Http\Controllers\DashboardController::class, 'presensi'])->name('presensi')->middleware("role:2");
+Route::post('/presensi', [App\Http\Controllers\DashboardController::class, 'presensi_save'])->name('presensi.save')->middleware("role:2");
+Route::delete('/presensi', [App\Http\Controllers\DashboardController::class, 'presensi_delete'])->name('presensi.delete')->middleware("role:2");
 
 Route::prefix('laporan')->group(function () {
     Route::get('keuangan', [App\Http\Controllers\DashboardController::class, 'laporan_keuangan'])->name('laporan.keuangan');
@@ -31,7 +32,7 @@ Route::prefix('master')->group(function () {
     Route::get('staff', [App\Http\Controllers\DashboardController::class, 'staff'])->name('master.staff')->middleware("adminRole");
     Route::post('staff', [App\Http\Controllers\DashboardController::class, 'staff_save'])->name('master.staff.save')->middleware("adminRole");
     Route::delete('staff', [App\Http\Controllers\DashboardController::class, 'staff_delete'])->name('master.staff.delete')->middleware("adminRole");
-    Route::get('santri', [App\Http\Controllers\DashboardController::class, 'santri'])->name('master.santri')->middleware("adminRole");
+    Route::get('santri', [App\Http\Controllers\DashboardController::class, 'santri'])->name('master.santri');
     Route::post('santri', [App\Http\Controllers\DashboardController::class, 'santri_save'])->name('master.santri.save')->middleware("adminRole");
     Route::delete('santri', [App\Http\Controllers\DashboardController::class, 'santri_delete'])->name('master.santri.delete')->middleware("adminRole");
     Route::prefix('pemasukan')->group(function () {

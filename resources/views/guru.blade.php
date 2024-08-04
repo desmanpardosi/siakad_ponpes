@@ -1,8 +1,5 @@
 @extends('layouts.main')
 @section('title', __('Master Guru'))
-@section('custom-css')
-  <link rel="stylesheet" href="/assets/css/datepicker.min.css" />
-@endsection
 @section('content')
 <div class="widget-box">
   <div class="widget-header">

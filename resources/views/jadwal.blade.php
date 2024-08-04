@@ -164,7 +164,7 @@
             $('#mapel').empty();
             $('#mapel').append('<option value="">.:: Pilih Mata Pelajaran ::.</option>');
             $.each(data, function(key, value) {
-              $('#mapel').append('<option value="'+ value.mapel_id +'">'+ value.mapel +'</option>');
+              $('#mapel').append('<option value="'+ value.mapel_id +'">'+ value.mapel + ' (Kelas ' + value.kelas_semester +')</option>');
             });
           }
       });
