@@ -164,7 +164,7 @@
             <div class="form-group row">
               <label for="kelas_semester" class="col-sm-4 col-form-label">Kelas / Semester</label>
               <div class="col-sm-8">
-                <input type="text" class="form-control" id="kelas_semester" name="kelas_semester">
+                <select class="form-control select2" style="width: 100%;" id="kelas_semester" name="kelas_semester"></select>
               </div>
             </div>
             <div class="form-group row">
@@ -264,6 +264,7 @@
     $("#button-save").text("Tambahkan");
     $("#button-save").show();
     resetForm();
+    getKelas();
   }
 
   function editData(data) {
@@ -289,11 +290,32 @@
     $("#nama_ibu").val(data.nama_ibu);
     $("#nohp_ortu").val(data.nohp_ortu);
     $("#alamat_ortu").val(data.alamat_ortu);
+    getKelas(data.kelas_id)
   }
 
   function deleteData(data) {
     $("#delete_id").val(data.santri_id);
     $("#delete_name").text(data.nama_lengkap);
+  }
+
+  function getKelas(val){
+      $.ajax({
+          url: "{{ route('master.kelas') }}",
+          type: "GET",
+          data: {"format": "json"},
+          dataType: "json",
+          success:function(data) {
+            $('#kelas_semester').empty();
+            $('#kelas_semester').append('<option value="">.:: Pilih Kelas / Semester ::.</option>');
+            $.each(data, function(key, value) {
+              if(value.kelas_id == val){
+                $('#kelas_semester').append('<option value="'+ value.kelas_id +'" selected>'+ value.kelas_semester +'</option>');
+              } else {
+                $('#kelas_semester').append('<option value="'+ value.kelas_id +'">'+ value.kelas_semester +'</option>');
+              }
+            });
+          }
+      });
   }
 
   function view(url){

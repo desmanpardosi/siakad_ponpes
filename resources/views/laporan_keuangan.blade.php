@@ -1,5 +1,5 @@
 @extends('layouts.main')
-@section('title', __('Pengeluaran'))
+@section('title', __('Laporan Keuangan'))
 @section('custom-css')
   <link rel="stylesheet" href="{{ url('/assets/css/datepicker.min.css') }}" />
 	<link rel="stylesheet" href="{{ url('/plugins/daterangepicker/daterangepicker.css') }}">
@@ -7,9 +7,6 @@
 @section('content')
 <div class="widget-box">
   <div class="widget-header">
-    <div class="widget-toolbar no-border">
-      <button type="button" class="btn btn-xs btn-primary" data-toggle="modal" data-target="#tambah-data" onclick="addData()"><i class="fa fa-plus"></i> Tambah Pengeluaran</button>
-    </div>
   </div>
   <div class="widget-body">
     <div class="widget-main">
@@ -24,48 +21,12 @@
             <th>No.</th>
             <th>Tanggal</th>
             <th>Kategori</th>
-            <th>Nominal (Rp)</th>
+            <th>Pemasukan (Rp)</th>
+            <th>Pengeluaran (Rp)</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
-    </div>
-  </div>
-</div>
-<div class="modal fade" id="tambah-data">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 id="modal-title" class="blue bigger">Tambah Pengeluaran</h4>
-      </div>
-      <div class="modal-body">
-        <form role="form" id="save" action="{{ route('pengeluaran.save') }}" method="post" enctype="multipart/form-data">
-          @csrf
-            <div class="form-group row">
-              <label for="tanggal" class="col-sm-4 col-form-label">Tanggal</label>
-              <div class="col-sm-8">
-                <input class="form-control date-picker" id="tanggal" name="tanggal"  type="text" data-date-format="yyyy-mm-dd" autocomplete="off"/>
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="kategori" class="col-sm-4 col-form-label">Kategori</label>
-              <div class="col-sm-8">
-                <select class="form-control select2" style="width: 100%;" id="kategori" name="kategori"></select>
-              </div>
-            </div>
-            <div class="form-group row">
-              <label for="nominal" class="col-sm-4 col-form-label">Nominal (Rp)</label>
-              <div class="col-sm-8">
-                <input type="number" class="form-control" id="nominal" name="nominal">
-              </div>
-            </div>
-        </form>
-      </div>
-      <div class="modal-footer justify-content-between">
-        <button type="button" class="btn btn-default" data-dismiss="modal">{{ __('Batal') }}</button>
-        <button id="button-save" type="button" class="btn btn-primary" onclick="document.getElementById('save').submit();">Simpan</button>
-      </div>
     </div>
   </div>
 </div>
@@ -107,8 +68,9 @@ $(function () {
         aoColumns : [
             { sWidth: '5%' },
             { sWidth: '25%' },
-            { sWidth: '35%' },
-            { sWidth: '35%' },
+            { sWidth: '20%' },
+            { sWidth: '25%' },
+            { sWidth: '25%' },
         ],
         dom: 'Bfrtip',
         responsive: true,
@@ -118,22 +80,23 @@ $(function () {
         processing: false,
         serverSide: false,
         ajax: {
-            "url": "{{ route('pengeluaran') }}",
+            "url": "{{ route('laporan.keuangan') }}",
             "type": "get",
             data:function (d) {
                 d.fd = $('input[name="daterange"]').data('daterangepicker').startDate.format('YYYY-MM-DD');
                 d.td = $('input[name="daterange"]').data('daterangepicker').endDate.format('YYYY-MM-DD');
             }
         },
-        order: [[0, 'desc']],
+        order: [[0, 'asc']],
         columns: [
             {data: 'no', name: 'no'},
             {data: 'tanggal', name: 'tanggal'},
             {data: 'kategori', name: 'kategori'},
-            {data: 'nominal', name: 'nominal'},
+            {data: 'pemasukan', name: 'pemasukan'},
+            {data: 'pengeluaran', name: 'pengeluaran'},
         ],
         'columnDefs': [
-            {"targets": [3], "className": "text-right"}
+            {"targets": [3,4], "className": "text-right"}
         ],
     });
     $(".filter").click(function(){
@@ -145,33 +108,5 @@ $(function () {
     autoclose: true,
     todayHighlight: true
   })
-
-  function resetForm(){
-    $('#save').trigger("reset");
-  }
-
-  function addData(){
-    $("#modal-title").text("Tambah Pemasukan");
-    $("#button-save").text("Tambahkan");
-    $("#button-save").show();
-    resetForm();
-    getCategory();
-  }
-
-  function getCategory(val){
-      $.ajax({
-          url: "{{ route('master.pengeluaran.kategori') }}",
-          type: "GET",
-          data: {"format": "json"},
-          dataType: "json",
-          success:function(data) {
-            $('#kategori').empty();
-            $('#kategori').append('<option value="">.:: Pilih Kategori ::.</option>');
-            $.each(data, function(key, value) {
-              $('#kategori').append('<option value="'+ value.kategori_id +'">'+ value.kategori +'</option>');
-            });
-          }
-      });
-  }
 </script>
 @endsection

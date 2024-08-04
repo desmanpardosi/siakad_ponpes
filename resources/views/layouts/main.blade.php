@@ -1,31 +1,26 @@
-@if(Auth::check() && Auth::user()->isRM)
-  @section('title', __('Berkas'))
-  @php $isRM = true; $isHR = false; @endphp
-@elseif(Auth::check() && Auth::user()->isHR)
-  @section('title', __('Berkas'))
-  @php $isRM = false;$isHR = true; @endphp
-@else
-  @section('title', __('e-Book'))
-  @php $isRM = false;$isHR = false; @endphp
-@endif
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 	<meta charset="utf-8" />
+<<<<<<< HEAD
 	<title>Masaksih | {{ config('app.name', 'Demo') }} - @yield('title')</title>
+=======
+	<title>{{ config('app.name', 'Demo') }} - @yield('title')</title>
+>>>>>>> 8e8aea5 (Terbaru)
 	<meta name="description" content="overview &amp; stats" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
 	<meta name="csrf-token" content="{{ csrf_token() }}" />
 	<link rel="stylesheet" href="{{ url('/assets/css/bootstrap.min.css') }}" />
-	<link rel="stylesheet" href="{{ url('/assets/font-awesome/4.2.0/css/font-awesome.min.css') }}" />
+	<link rel="stylesheet" href="{{ url('/assets/font-awesome/4.7.0/css/font-awesome.min.css') }}" />
 	<link rel="stylesheet" href="{{ url('/assets/fonts/fonts.googleapis.com.css') }}" />
 	<link rel="stylesheet" href="{{ url('/assets/css/ace.min.css') }}" class="ace-main-stylesheet" id="main-ace-style" />
 	<link rel="stylesheet" href="{{ url('/plugins/toastr/toastr.min.css') }}">
 	<link rel="stylesheet" href="{{ url('/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}" />
 	<link rel="stylesheet" href="{{ url('/plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}" />
 	<link rel="stylesheet" href="{{ url('/plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}" />
+	<link rel="stylesheet" href="{{ url('/plugins/select2/css/select2.min.css') }}">
 	@hasSection('custom-css')
 	@yield('custom-css')
 	@endif
@@ -103,9 +98,16 @@
 
 					<b class="arrow"></b>
 				</li>
-				@if(Auth::check())
-				@if(Auth::user()->role == 0 || Auth::user()->role == 1)
-				<li class="{{ (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pemasukan.kategori') || (Route::current()->getName() == 'master.santri') || (Route::current()->getName() == 'master.staff') || (Route::current()->getName() == 'master.guru') || (Route::current()->getName() == 'master.users') || (Route::current()->getName() == 'master.assets')? 'active highlight':''}}">
+				@if(Auth::check() && Auth::user()->role == 0 || Auth::check() && Auth::user()->role == 1)
+				<li class="{{ (Route::current()->getName() == 'presensi')? 'active highlight':''}}">
+					<a href="{{ route('presensi') }}">
+						<i class="menu-icon fa fa-calendar-check-o"></i>
+						Presensi
+					</a>
+
+					<b class="arrow"></b>
+				</li>
+				<li class="{{ (Route::current()->getName() == 'master.jadwal') || (Route::current()->getName() == 'master.jp') || (Route::current()->getName() == 'master.mapel') || (Route::current()->getName() == 'master.kelas') || (Route::current()->getName() == 'master.ruangan') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pemasukan.kategori') || (Route::current()->getName() == 'master.santri') || (Route::current()->getName() == 'master.staff') || (Route::current()->getName() == 'master.guru') || (Route::current()->getName() == 'master.users') || (Route::current()->getName() == 'master.assets')? 'active highlight':''}}">
 					<a href="#" class="dropdown-toggle">
 						<i class="menu-icon fa fa-folder"></i>
 						<span class="menu-text">
@@ -134,6 +136,22 @@
 
 							<b class="arrow"></b>
 						</li>
+						<li class="{{ (Route::current()->getName() == 'master.jadwal')? 'active highlight':''}}">
+							<a href="{{ route('master.jadwal') }}">
+								<i class="menu-icon fa fa-caret-right"></i>
+								Jadwal Pelajaran
+							</a>
+
+							<b class="arrow"></b>
+						</li>
+						<li class="{{ (Route::current()->getName() == 'master.jp')? 'active highlight':''}}">
+							<a href="{{ route('master.jp') }}">
+								<i class="menu-icon fa fa-caret-right"></i>
+								Jam Pelajaran
+							</a>
+
+							<b class="arrow"></b>
+						</li>
 						<li class="{{ (Route::current()->getName() == 'master.pemasukan.kategori')? 'active highlight':''}}">
 							<a href="{{ route('master.pemasukan.kategori') }}">
 								<i class="menu-icon fa fa-caret-right"></i>
@@ -146,6 +164,30 @@
 							<a href="{{ route('master.pengeluaran.kategori') }}">
 								<i class="menu-icon fa fa-caret-right"></i>
 								Kategori Pengeluaran
+							</a>
+
+							<b class="arrow"></b>
+						</li>
+						<li class="{{ (Route::current()->getName() == 'master.kelas')? 'active highlight':''}}">
+							<a href="{{ route('master.kelas') }}">
+								<i class="menu-icon fa fa-caret-right"></i>
+								Kelas / Semester
+							</a>
+
+							<b class="arrow"></b>
+						</li>
+						<li class="{{ (Route::current()->getName() == 'master.mapel')? 'active highlight':''}}">
+							<a href="{{ route('master.mapel') }}">
+								<i class="menu-icon fa fa-caret-right"></i>
+								Mata Pelajaran
+							</a>
+
+							<b class="arrow"></b>
+						</li>
+						<li class="{{ (Route::current()->getName() == 'master.ruangan')? 'active highlight':''}}">
+							<a href="{{ route('master.ruangan') }}">
+								<i class="menu-icon fa fa-caret-right"></i>
+								Ruangan
 							</a>
 
 							<b class="arrow"></b>
@@ -176,22 +218,53 @@
 						</li>
 					</ul>
 				</li>
-				<li class="{{ (Route::current()->getName() == 'pemasukan')? 'active highlight':''}}">
-					<a href="{{ route('pemasukan') }}">
-						<i class="menu-icon fa fa-download"></i>
-						<span class="menu-text">Pemasukan</span>
+				@endif
+				@if(Auth::check() && Auth::user()->role == 0 || Auth::check() && Auth::user()->role == 1 || Auth::check() && Auth::user()->role == 3)
+				<li class="{{ (Route::current()->getName() == 'laporan.keuangan') || (Route::current()->getName() == 'pemasukan') || (Route::current()->getName() == 'pengeluaran')? 'active highlight':''}}">
+					<a href="#" class="dropdown-toggle">
+						<i class="menu-icon fa fa-money"></i>
+						<span class="menu-text">
+							Keuangan
+						</span>
+
+						<b class="arrow fa fa-angle-down"></b>
 					</a>
 
 					<b class="arrow"></b>
-				</li>
-				<li class="{{ (Route::current()->getName() == 'pengeluaran')? 'active highlight':''}}">
-					<a href="{{ route('pengeluaran') }}">
-						<i class="menu-icon fa fa-upload"></i>
-						<span class="menu-text">Pengeluaran</span>
-					</a>
 
-					<b class="arrow"></b>
+					<ul class="submenu">
+						@if(Auth::check() && Auth::user()->role == 0 || Auth::check() && Auth::user()->role == 1)
+						<li class="{{ (Route::current()->getName() == 'pemasukan')? 'active highlight':''}}">
+							<a href="{{ route('pemasukan') }}">
+								<i class="menu-icon fa fa-caret-right"></i>
+								<span class="menu-text">Pemasukan</span>
+							</a>
+
+							<b class="arrow"></b>
+						</li>
+						<li class="{{ (Route::current()->getName() == 'pengeluaran')? 'active highlight':''}}">
+							<a href="{{ route('pengeluaran') }}">
+								<i class="menu-icon fa fa-caret-right"></i>
+								<span class="menu-text">Pengeluaran</span>
+							</a>
+
+							<b class="arrow"></b>
+						</li>
+						@endif
+						@if(Auth::check() && Auth::user()->role == 0 || Auth::check() && Auth::user()->role == 1 || Auth::check() && Auth::user()->role == 3)
+						<li class="{{ (Route::current()->getName() == 'laporan.keuangan')? 'active highlight':''}}">
+							<a href="{{ route('laporan.keuangan') }}">
+								<i class="menu-icon fa fa-caret-right"></i>
+								<span class="menu-text">Laporan Keuangan</span>
+							</a>
+
+							<b class="arrow"></b>
+						</li>
+						@endif
+					</ul>
 				</li>
+				@endif
+				@if(Auth::check())
 				<li class="{{ (Route::current()->getName() == 'settings')? 'active highlight':''}}">
 					<a href="{{ route('settings') }}">
 						<i class="menu-icon fa fa-gears"></i>
@@ -200,7 +273,6 @@
 
 					<b class="arrow"></b>
 				</li>
-				@endif
 				@endif
 			</ul>
 
@@ -237,7 +309,7 @@
 						</li>
 						<li class="active">@yield('title')</li>
 					</ul>
-					@if(Route::current()->getName() == 'master.ebook' || Route::current()->getName() == 'master.category')
+					@if(Route::current()->getName() == 'master.ruangan' || Route::current()->getName() == 'master.pemasukan.kategori' || Route::current()->getName() == 'master.pengeluaran.kategori' || Route::current()->getName() == 'master.santri' || Route::current()->getName() == 'master.guru' || Route::current()->getName() == 'master.staff' || Route::current()->getName() == 'master.users')
 					<div class="nav-search" id="nav-search">
 						<form class="form-search">
 							<span class="input-icon">
@@ -270,7 +342,7 @@
 					<span class="block">Anda login sebagai <b>{{ Auth::user()->username }}</b> (<a href="#" onclick="$('#logout').submit();">Logout</a>)</span>
 					@endif
 					<span class="block">
-						Copyright &copy; {{ date('Y') }} <a href="https://www.dhp.co.id">PT. DHP DIGITAL TEKNOLOGI</a>.
+						Copyright &copy; {{ date('Y') }}.
 					</span>
 				</div>
 			</div>
@@ -298,6 +370,7 @@
 	<script src="/assets/js/ace-elements.min.js"></script>
 	<script src="/assets/js/ace.min.js"></script>
 	<script src="/plugins/toastr/toastr.min.js"></script>
+	<script src="{{ url('/plugins/select2/js/select2.full.min.js') }}"></script>
 	@hasSection('custom-js')
 	@yield('custom-js')
 	@endif
@@ -316,6 +389,7 @@
 		toastr.error('{!! implode("", $errors->all("<li>:message</li>")) !!}');
 	</script>
 	@endif
+	<script>$('.select2').select2();</script>
 </body>
 
 </html>

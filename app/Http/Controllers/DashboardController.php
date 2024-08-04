@@ -88,21 +88,32 @@ class DashboardController extends Controller
 
     public function users(Request $req)
     {
-        $search = $req->search;
-        if (!empty($search)) {
-            $users = DB::table("users")->select("users.*", "roles.name as role_name")
-                    ->LeftJoin("roles", "users.role", "=", "roles.role_id")
-                    ->where("users.username", "LIKE", "%" . $search . "%")
-                    ->orWhere("users.name", "LIKE", "%" . $search . "%")
-                    ->paginate(20);
+        $users = DB::table("users")->select("users.id", "users.username", "users.name", "users.role", "roles.name as role_name")
+                ->LeftJoin("roles", "users.role", "=", "roles.role_id");
 
+        if ($req->format == "json") {
+            $role = $req->role;
+
+            if(!empty($role)){
+                $users = $users->where("role", $role);
+            }
+
+            $users = $users->get();
+
+            return response()->json($users);
         } else {
-            $users = DB::table("users")->select("users.*", "roles.name as role_name")
-                    ->LeftJoin("roles", "users.role", "=", "roles.role_id")
-                    ->orderBy("users.name", "asc")->paginate(20);
-        }
+            $search = $req->search;
+            if (!empty($search)) {
+                $users = $users->where("users.username", "LIKE", "%" . $search . "%")
+                        ->orWhere("users.name", "LIKE", "%" . $search . "%")
+                        ->paginate(20);
 
-        return View::make('users')->with(compact("users"));
+            } else {
+                $users = $users->orderBy("users.name", "asc")->paginate(25);
+            }
+
+            return View::make('users')->with(compact("users"));
+        }
     }
 
     public function users_save(Request $req){
@@ -220,7 +231,7 @@ class DashboardController extends Controller
         }
 
         $roles = $roles->reject(function ($roles){
-            return in_array($roles->role_id, [2,3]);
+            return in_array($roles->role_id, [3]);
         });
 
         return response()->json($roles);
@@ -233,19 +244,88 @@ class DashboardController extends Controller
         return substr(str_shuffle(str_repeat($code, $length)), 0, $length);
     }
 
+    public function ruangan(Request $req)
+    {
+
+        $ruangan = DB::table("ruangan")->select("ruangan.*")->where("NA", "N");
+
+        if ($req->format == "json") {
+            $ruangan = $ruangan->get();
+            return response()->json($ruangan);
+        } else {
+            $search = $req->search;
+
+            if (!empty($search)) {
+                $ruangan = $ruangan->where("ruangan.nama_ruangan", "LIKE", "%" . $search . "%")
+                        ->orderBy("ruangan.nama_ruangan", "asc")            
+                        ->paginate(25);
+
+            } else {
+                $ruangan = $ruangan->orderBy("ruangan.nama_ruangan", "asc")
+                        ->paginate(25);
+            }
+
+            foreach($ruangan as $r){
+                $r->jumlah_asset =  DB::table("assets")->where("assets.ruangan_id", $r->ruangan_id)->count();
+            }
+
+            return View::make('ruangan')->with(compact("ruangan"));
+        }
+    }
+
+    public function ruangan_save(Request $req){
+        $nama_ruangan = $req->nama_ruangan;
+
+        $req->validate([
+            'nama_ruangan'    => ['required']
+            
+        ],
+        [
+            'nama_ruangan.required'   => 'Nama Ruangan belum diisi!'
+        ]);
+
+        $data = [
+            "nama_ruangan"    => $nama_ruangan,
+            "user_buat"     => Auth::user()->username,
+        ];
+
+        $add = DB::table('ruangan')->insertGetId($data);
+
+        if($add){
+            $req->session()->flash('success', "Ruangan berhasil ditambahkan.");
+        } else {
+            $req->session()->flash('error', "Ruangan gagal ditambahkan!");
+        }
+        
+        return redirect()->back();
+    }
+
+    public function ruangan_delete(Request $req)
+    {
+        $update = DB::table('ruangan')->where("ruangan_id", $req->delete_id)->update(["NA" => "Y"]);
+        if ($update) {
+            $req->session()->flash('success', "Ruangan berhasil dihapus.");
+        } else {
+            $req->session()->flash('error', "Ruangan gagal dihapus!");
+        }
+
+        return redirect()->back();
+    }
+
     public function assets(Request $req)
     {
-        $search = $req->search;
+        $ruangan = $req->ruangan;
 
-        $assets = DB::table("assets")->select("assets.*")
-                    ->where("NA", "N");
-        if (!empty($search)) {
-            $assets = $assets->where("assets.nama_asset", "LIKE", "%" . $search . "%")
-                    ->orderBy("assets.nama_asset", "asc")            
+        $assets = DB::table("assets")->select("assets.*", "ruangan.nama_ruangan")
+                    ->LeftJoin("ruangan", "ruangan.ruangan_id", "=", "assets.ruangan_id")
+                    ->where("assets.NA", "N");
+        if (!empty($ruangan)) {
+            $assets = $assets->where("assets.ruangan_id", $ruangan)
+                    ->orderBy("assets.asset_id", "desc")            
                     ->paginate(25);
 
         } else {
-            $assets = $assets->orderBy("assets.nama_asset", "asc")
+            $assets = $assets->orderBy("assets.asset_id", "desc")
                     ->paginate(25);
         }
 
@@ -253,18 +333,21 @@ class DashboardController extends Controller
     }
 
     public function asset_save(Request $req){
-        $nama_asset = $req->nama_asset;
 
         $req->validate([
-            'nama_asset'    => ['required']
+            'ruangan'       => 'required|exists:ruangan,ruangan_id',
+            'nama_asset'    => 'required'
             
         ],
         [
+            'ruangan.required'      => 'Ruangan belum dipilih!',
+            'ruangan.exists'        => 'Ruangan tidak tersedia!',
             'nama_asset.required'   => 'Nama Asset belum diisi!'
         ]);
 
         $data = [
-            "nama_asset"    => $nama_asset,
+            "nama_asset"    => $req->nama_asset,
+            "ruangan_id"    => $req->ruangan,
             "user_buat"     => Auth::user()->username,
         ];
 
@@ -402,7 +485,8 @@ class DashboardController extends Controller
     {
         $search = $req->search;
 
-        $santri = DB::table("santri")->select("santri.*");
+        $santri = DB::table("santri")->select("santri.*", "kelas.kelas_semester")
+                    ->LeftJoin("kelas", "kelas.kelas_id", "=", "santri.kelas_id");
         if (!empty($search)) {
             $santri = $santri->where("santri.nama_lengkap", "LIKE", "%" . $search . "%")
                     ->orWhere("santri.nis", "LIKE", "%" . $search . "%")
@@ -412,8 +496,13 @@ class DashboardController extends Controller
                     ->paginate(25);
 
         } else {
-            $santri = $santri->orderBy("santri.nama_lengkap", "asc")
-                    ->paginate(25);
+            $santri = $santri->orderBy("santri.nama_lengkap", "asc");
+
+            if(!empty($req->kelas)){
+                $santri = $santri->where("santri.kelas_id", $req->kelas);
+            }
+
+            $santri = $santri->paginate(25);
         }
 
         return View::make('santri')->with(compact("santri"));
@@ -448,7 +537,7 @@ class DashboardController extends Controller
             "alamat"                =>$req->alamat,
             "no_hp"                 =>$req->no_hp,
             "pendidikan_formal"     =>$req->pendidikan_formal,
-            "kelas_semester"        =>$req->kelas_semester,
+            "kelas_id"              =>$req->kelas_semester,
             "nisn"                  =>$req->nisn,
             "program_ponpes"        =>$req->program_ponpes,
             "riwayat_mondok"        =>$req->riwayat_mondok,
@@ -567,9 +656,10 @@ class DashboardController extends Controller
     public function pemasukan(Request $req)
     {
         if ($req->ajax()) {
-            $pemasukan = DB::table('pemasukan')
-                        ->select('pemasukan.*', 'pemasukan_kategori.kategori')
-                        ->LeftJoin('pemasukan_kategori', 'pemasukan_kategori.kategori_id', '=', 'pemasukan.kategori_id');
+            $pemasukan = DB::table('keuangan')
+                        ->select('keuangan.*', 'pemasukan_kategori.kategori')
+                        ->LeftJoin('pemasukan_kategori', 'pemasukan_kategori.kategori_id', '=', 'keuangan.kategori_id')
+                        ->where("keuangan.jenis", 0);
 
             if(!empty($req->fd) && !empty($req->td)){
                 $pemasukan = $pemasukan->whereBetween('tanggal', [$req->fd." 00:00:00", $req->td." 23:59:59"]);
@@ -577,14 +667,17 @@ class DashboardController extends Controller
 
             $pemasukan = $pemasukan->orderBy("tanggal", "desc")->get();
 
-            $data = [];
+            $data   = [];
+            $no     = 1;
             foreach($pemasukan as $p){
                 $data[] = [
-                    'pemasukan_id'      => $p->pemasukan_id,
+                    'no'                => $no,
+                    'pemasukan_id'      => $p->keuangan_id,
                     'tanggal'           => date("d/m/Y", strtotime($p->tanggal)),
                     'kategori'          => $p->kategori,
-                    'jumlah'            => number_format($p->jumlah, 2, ",", ".")
+                    'nominal'           => number_format($p->nominal, 0, ",", ".")
                 ];
+                $no++;
             }
 
             return DataTables::of($data)
@@ -599,25 +692,26 @@ class DashboardController extends Controller
         $req->validate([
             'tanggal'   => 'required|date_format:Y-m-d',
             'kategori'  => 'required|exists:pemasukan_kategori,kategori_id',
-            'jumlah'    => 'required|numeric'
+            'nominal'   => 'required|numeric'
             
         ],
         [
             'tanggal.date_format'   => 'Tanggal tidak sesuai format Y-m-d!',
             'kategori.required'     => 'Kategori belum dipilih!',
             'kategori.exists'       => 'Kategori tidak tersedia!',
-            'jumlah.required'       => 'Jumlah belum diisi!',
-            'jumlah.numeric'        => 'Jumlah harus angka!'
+            'nominal.required'      => 'Jumlah belum diisi!',
+            'nominal.numeric'       => 'Jumlah harus angka!'
         ]);
 
         $data = [
             "tanggal"       => $req->tanggal,
+            "jenis"         => 0,
             "kategori_id"   => $req->kategori,
-            "jumlah"        => $req->jumlah,
+            "nominal"       => $req->nominal,
             "user_buat"     => Auth::user()->username,
         ];
 
-        $add = DB::table('pemasukan')->insertGetId($data);
+        $add = DB::table('keuangan')->insertGetId($data);
 
         if($add){
             $req->session()->flash('success', "Pemasukan berhasil ditambahkan.");
@@ -697,9 +791,10 @@ class DashboardController extends Controller
     public function pengeluaran(Request $req)
     {
         if ($req->ajax()) {
-            $pengeluaran = DB::table('pengeluaran')
-                        ->select('pengeluaran.*', 'pengeluaran_kategori.*')
-                        ->LeftJoin('pengeluaran_kategori', 'pengeluaran_kategori.kategori_id', '=', 'pengeluaran.kategori_id');
+            $pengeluaran = DB::table('keuangan')
+                        ->select('keuangan.*', 'pengeluaran_kategori.*')
+                        ->LeftJoin('pengeluaran_kategori', 'pengeluaran_kategori.kategori_id', '=', 'keuangan.kategori_id')
+                        ->where("keuangan.jenis", 1);
 
             if(!empty($req->fd) && !empty($req->td)){
                 $pengeluaran = $pengeluaran->whereBetween('tanggal', [$req->fd." 00:00:00", $req->td." 23:59:59"]);
@@ -707,21 +802,17 @@ class DashboardController extends Controller
 
             $pengeluaran = $pengeluaran->orderBy("tanggal", "desc")->get();
 
-            $data = [];
+            $data   = [];
+            $no     = 1;
             foreach($pengeluaran as $p){
-                if($p->jenis == 0){
-                    $jenis = "Dana Guru";
-                } else {
-                    $jenis = "Dana Operasional";
-                }
-
                 $data[] = [
-                    'pengeluaran_id'    => $p->pengeluaran_id,
+                    'no'                => $no,
+                    'pengeluaran_id'    => $p->keuangan_id,
                     'tanggal'           => date("d/m/Y", strtotime($p->tanggal)),
-                    'jenis'             => $jenis,
                     'kategori'          => $p->kategori,
-                    'jumlah'            => number_format($p->jumlah, 2, ",", ".")
+                    'nominal'           => number_format($p->nominal, 0, ",", ".")
                 ];
+                $no++;
             }
 
             return DataTables::of($data)
@@ -736,25 +827,26 @@ class DashboardController extends Controller
         $req->validate([
             'tanggal'   => 'required|date_format:Y-m-d',
             'kategori'  => 'required|exists:pengeluaran_kategori,kategori_id',
-            'jumlah'    => 'required|numeric'
+            'nominal'   => 'required|numeric'
             
         ],
         [
             'tanggal.date_format'   => 'Tanggal tidak sesuai format Y-m-d!',
             'kategori.required'     => 'Kategori belum dipilih!',
             'kategori.exists'       => 'Kategori tidak tersedia!',
-            'jumlah.required'       => 'Jumlah belum diisi!',
-            'jumlah.numeric'        => 'Jumlah harus angka!'
+            'nominal.required'      => 'Jumlah belum diisi!',
+            'nominal.numeric'       => 'Jumlah harus angka!'
         ]);
 
         $data = [
             "tanggal"       => $req->tanggal,
+            "jenis"         => 1,
             "kategori_id"   => $req->kategori,
-            "jumlah"        => $req->jumlah,
+            "nominal"       => $req->nominal,
             "user_buat"     => Auth::user()->username,
         ];
 
-        $add = DB::table('pengeluaran')->insertGetId($data);
+        $add = DB::table('keuangan')->insertGetId($data);
 
         if($add){
             $req->session()->flash('success', "Pengeluaran berhasil ditambahkan.");
@@ -762,6 +854,408 @@ class DashboardController extends Controller
             $req->session()->flash('error', "Pengeluaran gagal ditambahkan!");
         }
         
+        return redirect()->back();
+    }
+
+    public function laporan_keuangan(Request $req)
+    {
+        if ($req->ajax()) {
+            $keuangan = DB::table('keuangan')->select('keuangan.*');
+
+            if(!empty($req->fd) && !empty($req->td)){
+                $keuangan = $keuangan->whereBetween('tanggal', [$req->fd." 00:00:00", $req->td." 23:59:59"]);
+            }
+
+            $keuangan = $keuangan->orderBy("tanggal", "desc")->get();
+
+            $data   = [];
+            $no     = 1;
+            foreach($keuangan as $k){
+                if($k->jenis == 0){
+                    $pemasukan      = number_format($k->nominal, 0, ",", ".");
+                    $pengeluaran    = null;
+                    $kategori = DB::table('pemasukan_kategori')->select('pemasukan_kategori.kategori')->first();
+                    if(!empty($kategori)){
+                        $kategori = $kategori->kategori;
+                    } else {
+                        $kategori = "-";
+                    }
+                } else {
+                    $pemasukan      = null;
+                    $pengeluaran    = number_format($k->nominal, 0, ",", ".");
+                    $kategori = DB::table('pengeluaran_kategori')->select('pengeluaran_kategori.kategori')->first();
+                    if(!empty($kategori)){
+                        $kategori = $kategori->kategori;
+                    } else {
+                        $kategori = "-";
+                    }
+                }
+
+                $data[] = [
+                    'no'            => $no,
+                    'tanggal'       => date("d/m/Y", strtotime($k->tanggal)),
+                    'kategori'      => $kategori,
+                    'pemasukan'     => $pemasukan,
+                    'pengeluaran'   => $pengeluaran
+                ];
+
+                $no++;
+            }
+
+            return DataTables::of($data)
+                    ->addIndexColumn()
+                    ->make(true);
+        }
+
+        return View::make('laporan_keuangan');
+    }
+
+    public function kelas(Request $req)
+    {
+
+        $kelas = DB::table("kelas")->select("kelas.*")->where("NA", "N");
+
+        if ($req->format == "json") {
+            $kelas = $kelas->get();
+            return response()->json($kelas);
+        } else {
+            $search = $req->search;
+
+            if (!empty($search)) {
+                $kelas = $kelas->where("kelas.kelas_semester", "LIKE", "%" . $search . "%")
+                        ->orderBy("kelas.kelas_semester", "asc")            
+                        ->paginate(25);
+
+            } else {
+                $kelas = $kelas->orderBy("kelas.kelas_semester", "asc")
+                        ->paginate(25);
+            }
+
+            foreach($kelas as $r){
+                $r->jumlah_santri =  DB::table("santri")->where("santri.kelas_id", $r->kelas_id)->count();
+            }
+
+            return View::make('kelas')->with(compact("kelas"));
+        }
+    }
+
+    public function kelas_save(Request $req){
+        $req->validate([
+            'kelas_semester'    => 'required|unique:kelas,kelas_semester'
+            
+        ],
+        [
+            'kelas_semester.required'   => 'Kelas / Semester belum diisi!',
+            'kelas_semester.unique'     => 'Kelas / Semester sudah ada!'
+        ]);
+
+        $data = [
+            "kelas_semester"    => $req->kelas_semester,
+            "user_buat"     => Auth::user()->username,
+        ];
+
+        $add = DB::table('kelas')->insertGetId($data);
+
+        if($add){
+            $req->session()->flash('success', "Kelas berhasil ditambahkan.");
+        } else {
+            $req->session()->flash('error', "Kelas gagal ditambahkan!");
+        }
+        
+        return redirect()->back();
+    }
+
+    public function kelas_delete(Request $req)
+    {
+        $update = DB::table('kelas')->where("kelas_id", $req->delete_id)->update(["NA" => "Y"]);
+        if ($update) {
+            $req->session()->flash('success', "Kelas berhasil dihapus.");
+        } else {
+            $req->session()->flash('error', "Kelas gagal dihapus!");
+        }
+
+        return redirect()->back();
+    }
+
+    public function mapel(Request $req)
+    {
+
+        $mapel = DB::table("mapel")->select("mapel.*", "kelas.kelas_semester", "users.name as guru")
+                ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+                ->LeftJoin("users", "users.id", "=", "mapel.guru")
+                ->where("mapel.NA", "N");
+
+        if ($req->format == "json") {
+            $mapel = $mapel->get();
+            return response()->json($mapel);
+        } else {
+            $search = $req->search;
+
+            if (!empty($search)) {
+                $mapel = $mapel->where("mapel.mapel", "LIKE", "%" . $search . "%")
+                        ->orderBy("mapel.mapel", "asc")            
+                        ->paginate(25);
+
+            } else {
+                $mapel = $mapel->orderBy("mapel.mapel", "asc")
+                        ->paginate(25);
+            }
+
+            return View::make('mapel')->with(compact("mapel"));
+        }
+    }
+
+    public function mapel_save(Request $req){
+        $req->id = $req->guru;
+        $req->validate([
+            'mapel'     => 'required',
+            'kelas'     => 'required|exists:kelas,kelas_id',
+            'guru'        => 'required|exists:users,id,role,2'
+        ],
+        [
+            'mapel.required'    => 'Mata Pelajaran belum diisi!',
+            'kelas.required'    => 'Kelas / Semester belum dipilih!',
+            'kelas.exists'      => 'Kelas / Semester tidak tersedia!',
+            'guru.required'     => 'Guru belum dipilih!',
+            'guru.exists'       => 'Guru tidak tersedia!',
+        ]);
+
+        $data = [
+            "mapel"         => $req->mapel,
+            "kelas_id"      => $req->kelas,
+            "guru"          => $req->guru,
+            "user_buat"     => Auth::user()->username,
+        ];
+
+        $add = DB::table('mapel')->insertGetId($data);
+
+        if($add){
+            $req->session()->flash('success', "Mata Pelajaran berhasil ditambahkan.");
+        } else {
+            $req->session()->flash('error', "Mata Pelajaran gagal ditambahkan!");
+        }
+        
+        return redirect()->back();
+    }
+
+    public function mapel_delete(Request $req)
+    {
+        $update = DB::table('mapel')->where("mapel_id", $req->delete_id)->update(["NA" => "Y"]);
+        if ($update) {
+            $req->session()->flash('success', "Mata Pelajaran berhasil dihapus.");
+        } else {
+            $req->session()->flash('error', "Mata Pelajaran gagal dihapus!");
+        }
+
+        return redirect()->back();
+    }
+
+    public function presensi(Request $req)
+    {
+
+        $mapel = DB::table("mapel")->select("mapel.*", "kelas.kelas_semester", "users.name as guru")
+                ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+                ->LeftJoin("users", "users.id", "=", "mapel.guru")
+                ->where("mapel.NA", "N");
+
+        if ($req->format == "json") {
+            $mapel = $mapel->get();
+            return response()->json($mapel);
+        } else {
+            $search = $req->search;
+
+            if (!empty($search)) {
+                $mapel = $mapel->where("mapel.mapel", "LIKE", "%" . $search . "%")
+                        ->orderBy("mapel.mapel", "asc")            
+                        ->paginate(25);
+
+            } else {
+                $mapel = $mapel->orderBy("mapel.mapel", "asc")
+                        ->paginate(25);
+            }
+
+            return View::make('mapel')->with(compact("mapel"));
+        }
+    }
+
+    public function presensi_save(Request $req){
+        $req->id = $req->guru;
+        $req->validate([
+            'mapel'     => 'required|exists:mapel,mapel_id',
+            'santri'    => 'required|exists:santri,santri_id',
+            'tanggal'   => 'required'
+        ],
+        [
+            'mapel.required'    => 'Mata Pelajaran belum dipilih!',
+            'mapel.exists'      => 'Mata Pelajaran tidak tersedia!',
+            'santri.required'   => 'Santri / Santri Wati belum dipilih!',
+            'santri.exists'     => 'Santri / Santri Wati tidak tersedia!',
+        ]);
+
+        $data = [
+            "mapel"         => $req->mapel,
+            "kelas_id"      => $req->kelas,
+            "guru"          => $req->guru,
+            "user_buat"     => Auth::user()->username,
+        ];
+
+        $add = DB::table('mapel')->insertGetId($data);
+
+        if($add){
+            $req->session()->flash('success', "Mata Pelajaran berhasil ditambahkan.");
+        } else {
+            $req->session()->flash('error', "Mata Pelajaran gagal ditambahkan!");
+        }
+        
+        return redirect()->back();
+    }
+
+    public function presensi_delete(Request $req)
+    {
+        $update = DB::table('absensi')->where("absensi_id", $req->delete_id)->update(["NA" => "Y"]);
+        if ($update) {
+            $req->session()->flash('success', "Absensi berhasil dihapus.");
+        } else {
+            $req->session()->flash('error', "Absensi gagal dihapus!");
+        }
+
+        return redirect()->back();
+    }
+
+    public function jp(Request $req)
+    {
+        $nama_hari = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu", "Minggu"];
+
+        $jp = DB::table("jam_pelajaran")->select("jam_pelajaran.*")
+                ->where("jam_pelajaran.NA", "N");
+
+        if ($req->format == "json") {
+            $hari = $req->hari;
+
+            if(!empty($hari)){
+                $jp = $jp->where("hari", $hari);
+            }
+
+            $jp = $jp->get();
+
+            foreach($jp as $j){
+                $j->nama_hari = $nama_hari[$j->hari];
+            }
+
+            return response()->json($jp);
+        } else {
+            $jp = $jp->orderBy("jam_pelajaran.hari", "asc")->orderBy("jam_pelajaran.jam", "asc")->paginate(25);
+
+            foreach($jp as $j){
+                $j->nama_hari = $nama_hari[$j->hari];
+            }
+
+            return View::make('jp')->with(compact("jp"));
+        }
+    }
+
+    public function jp_save(Request $req){
+        $req->validate([
+            'hari'      => 'required|min:0|max:6',
+            'jam'       => 'required',
+        ],
+        [
+            'hari.required'     => 'Hari belum dipilih!',
+            'hari.min'          => 'Hari tidak berlaku!',
+            'hari.max'          => 'Hari tidak berlaku!'
+        ]);
+
+        $data = [
+            "hari"      => $req->hari,
+            "jam"       => $req->jam,
+        ];
+
+        $add = DB::table('jam_pelajaran')->insertGetId($data);
+
+        if($add){
+            $req->session()->flash('success', "Jam Pelajaran berhasil ditambahkan.");
+        } else {
+            $req->session()->flash('error', "Jam Pelajaran gagal ditambahkan!");
+        }
+        
+        return redirect()->back();
+    }
+
+    public function jp_delete(Request $req)
+    {
+        $update = DB::table('jam_pelajaran')->where("jp_id", $req->delete_id)->update(["NA" => "Y"]);
+        if ($update) {
+            $req->session()->flash('success', "Jam Pelajaran berhasil dihapus.");
+        } else {
+            $req->session()->flash('error', "Jam Pelajaran gagal dihapus!");
+        }
+
+        return redirect()->back();
+    }
+
+    public function jadwal(Request $req)
+    {
+        $nama_hari = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu", "Minggu"];
+
+        $jadwal = DB::table("jadwal_pelajaran")->select("jadwal_pelajaran.*", "jam_pelajaran.*", "users.name", "mapel.*", "kelas.kelas_semester")
+                ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
+                ->LeftJoin("mapel", "mapel.mapel_id", "=", "jadwal_pelajaran.mapel_id")
+                ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+                ->LeftJoin("users", "users.id", "=", "mapel.guru")
+                ->where("jadwal_pelajaran.NA", "N");
+
+        $jadwal = $jadwal->orderBy("jam_pelajaran.hari", "asc")->orderBy("mapel.mapel", "asc")->paginate(25);
+
+        foreach($jadwal as $j){
+            $j->nama_hari = $nama_hari[$j->hari];
+        }
+
+        return View::make('jadwal')->with(compact("jadwal"));
+    }
+
+    public function jadwal_save(Request $req){
+        $req->validate([
+            'jp'        => 'required|exists:jam_pelajaran,jp_id',
+            'mapel'     => 'required|exists:mapel,mapel_id',
+        ],
+        [
+            'jp.required'       => 'Jam Pelajaran belum dipilih!',
+            'jp.exists'         => 'Jam Pelajaran tidak ditemukan!',
+            'mapel.required'    => 'Mata Pelajaran belum dipilih!',
+            'mapel.exists'      => 'Mata Pelajaran tidak ditemukan!',
+        ]);
+
+        $exists = DB::table("jadwal_pelajaran")->where([["jp_id", $req->jp], ["mapel_id", $req->mapel]])->get()->count();
+
+        if($exists == 0){
+            $data = [
+                "jp_id"     => $req->jp,
+                "mapel_id"  => $req->mapel,
+            ];
+
+            $add = DB::table('jadwal_pelajaran')->insertGetId($data);
+
+            if($add){
+                $req->session()->flash('success', "Jadwal Pelajaran berhasil ditambahkan.");
+            } else {
+                $req->session()->flash('error', "Jadwal Pelajaran gagal ditambahkan!");
+            }
+        } else {
+            $req->session()->flash('error', "Jadwal Pelajaran sudah ada!");
+        }
+
+        return redirect()->back();
+    }
+
+    public function jadwal_delete(Request $req)
+    {
+        $update = DB::table('jadwal_pelajaran')->where("jadwal_id", $req->delete_id)->update(["NA" => "Y"]);
+        if ($update) {
+            $req->session()->flash('success', "Jadwal Pelajaran berhasil dihapus.");
+        } else {
+            $req->session()->flash('error', "Jadwal Pelajaran gagal dihapus!");
+        }
+
         return redirect()->back();
     }
 

@@ -21,10 +21,10 @@
       <table id="table" class="table table-responsive table-sm table-bordered table-hover dataTable dtr-inline collapsed">
         <thead>
           <tr>
-            <th>ID Pemasukan</th>
+            <th>No.</th>
             <th>Tanggal</th>
             <th>Kategori</th>
-            <th>Jumlah (Rp)</th>
+            <th>Nominal (Rp)</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -33,7 +33,7 @@
   </div>
 </div>
 <div class="modal fade" id="tambah-data">
-  <div class="modal-dialog modal-sm">
+  <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
@@ -55,9 +55,9 @@
               </div>
             </div>
             <div class="form-group row">
-              <label for="jumlah" class="col-sm-4 col-form-label">Jumlah</label>
+              <label for="nominal" class="col-sm-4 col-form-label">Nominal (Rp)</label>
               <div class="col-sm-8">
-                <input type="number" class="form-control" id="jumlah" name="jumlah">
+                <input type="number" class="form-control" id="nominal" name="nominal">
               </div>
             </div>
         </form>
@@ -127,10 +127,10 @@ $(function () {
         },
         order: [[0, 'desc']],
         columns: [
-            {data: 'pemasukan_id', name: 'pemasukan_id'},
+            {data: 'no', name: 'no'},
             {data: 'tanggal', name: 'tanggal'},
             {data: 'kategori', name: 'kategori'},
-            {data: 'jumlah', name: 'jumlah'},
+            {data: 'nominal', name: 'nominal'},
         ],
         'columnDefs': [
             {"targets": [3], "className": "text-right"}
