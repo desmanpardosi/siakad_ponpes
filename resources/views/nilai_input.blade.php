@@ -1,5 +1,5 @@
 @extends('layouts.main')
-@section('title', __('Input Presensi'))
+@section('title', __('Input Nilai'))
 @section('custom-css')
 @endsection
 @section('content')
@@ -12,7 +12,7 @@
       :
     </div>
     <div class="col-sm-6">
-      {{ $jadwal->nama_hari }}
+      {{ $mapel->nama_hari }}
     </div>
   </div>
   <div class="col-md-6">
@@ -23,7 +23,7 @@
       :
     </div>
     <div class="col-sm-6">
-      {{ $jadwal->jam }}
+      {{ $mapel->jam }}
     </div>
   </div>
 </div>
@@ -36,7 +36,7 @@
       :
     </div>
     <div class="col-sm-6">
-      {{ $jadwal->mapel }}
+      {{ $mapel->mapel }}
     </div>
   </div>
   <div class="col-md-6">
@@ -47,7 +47,7 @@
       :
     </div>
     <div class="col-sm-6">
-      {{ $jadwal->guru }}
+      {{ $mapel->guru }}
     </div>
   </div>
 </div>
@@ -60,7 +60,7 @@
       :
     </div>
     <div class="col-sm-6">
-      {{ $jadwal->kelas_semester }}
+      {{ $mapel->kelas_semester }}
     </div>
   </div>
   <div class="col-md-6">
@@ -71,14 +71,14 @@
       :
     </div>
     <div class="col-sm-6">
-      {{ $jadwal->tahun_pelajaran }}
+      {{ $mapel->tahun_pelajaran }}
     </div>
   </div>
 </div>
 <div class="widget-box">
   <div class="widget-header">
     <div class="widget-toolbar no-border">
-      <button type="button" class="btn btn-xs btn-primary" data-toggle="modal" data-target="#tambah-data" onclick="addData()"><i class="fa fa-plus"></i> Tambah Presensi</button>
+      <button type="button" class="btn btn-xs btn-primary" data-toggle="modal" data-target="#tambah-data" onclick="addData()"><i class="fa fa-plus"></i> Tambah Santri / Santri Wati</button>
     </div>
   </div>
   <div class="widget-body">
@@ -87,24 +87,26 @@
         <thead>
           <tr>
             <th>No.</th>
-            <th>Tanggal</th>
             <th>Nama Santri / Santri Wati</th>
+            <th>Nilai Angka</th>
+            <th>Nilai Huruf</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-        @if(count($presensi) > 0)
-          @foreach($presensi as $key => $m)
+        @if(count($nilai) > 0)
+          @foreach($nilai as $key => $m)
             <tr>
-              <td class="text-center">{{ $presensi->firstItem() + $key }}</td>
-              <td>{{ date("d/m/Y", strtotime($m->tgl_presensi)) }}</td>
+              <td class="text-center">{{ $nilai->firstItem() + $key }}</td>
               <td>{{ $m->nama_lengkap }}</td>
-              <td class="text-center"><button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick="deleteData({{ json_encode($presensi[$loop->iteration-1]) }})"><i class="fa fa-trash"></i></button></td>
+              <td>{{ $m->nilai }}</td>
+              <td>{{ $m->nilai_huruf }}</td>
+              <td class="text-center"><button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick="deleteData({{ json_encode($nilai[$loop->iteration-1]) }})"><i class="fa fa-trash"></i></button></td>
             </tr>
           @endforeach
         @else
             <tr>
-                <td colspan="4">{{ __('Belum ada data') }}</td>
+                <td colspan="5">{{ __('Belum ada data') }}</td>
             </tr>
         @endif
         </tfoot>
@@ -113,29 +115,29 @@
   </div>
 </div>
 <div class="float-right">
-  {{ $presensi->links("pagination::bootstrap-4") }}
+  {{ $nilai->links("pagination::bootstrap-4") }}
 </div>
 <div class="modal fade" id="tambah-data">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h4 class="blue bigger">Tambah Presensi</h4>
+        <h4 class="blue bigger">Tambah Santri / Santri Wati</h4>
       </div>
       <div class="modal-body">
-          <form role="form" id="save" action="{{ route('presensi.save') }}" method="post" enctype="multipart/form-data">
+          <form role="form" id="save" action="{{ route('nilai.save') }}" method="post" enctype="multipart/form-data">
             @csrf
-            <input type="hidden" id="jadwal" name="jadwal" value="{{ $jadwal->jadwal_id }}">
-            <div class="form-group row">
-              <label for="tanggal" class="col-sm-4 col-form-label">Tanggal</label>
-              <div class="col-sm-8">
-                <input class="form-control date-picker" id="tanggal" name="tanggal"  type="text" data-date-format="yyyy-mm-dd" autocomplete="off"/>
-              </div>
-            </div>
+            <input type="hidden" id="mapel" name="mapel" value="{{ $mapel->mapel_id }}">
             <div class="form-group row">
               <label for="santri" class="col-sm-4 col-form-label">Santri / Santri Wati</label>
               <div class="col-sm-8">
                 <select class="form-control select2" style="width: 100%;" id="santri" name="santri"></select>
+              </div>
+            </div>
+            <div class="form-group row">
+              <label for="nilai" class="col-sm-4 col-form-label">Nilai</label>
+              <div class="col-sm-8">
+                <input type="text" class="form-control" id="nilai" name="nilai">
               </div>
             </div>
           </form>
@@ -152,16 +154,16 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal">&times;</button>
-          <h4 class="blue bigger">Hapus Presensi</h4>
+          <h4 class="blue bigger">Hapus Nilai Santri / Santri Wati</h4>
         </div>
           <div class="modal-body">
-              <form role="form" id="delete" action="{{ route('presensi.delete') }}" method="post">
+              <form role="form" id="delete" action="{{ route('nilai.delete') }}" method="post">
                   @csrf
                   @method('delete')
                   <input type="hidden" id="delete_id" name="delete_id">
               </form>
               <div>
-                  <p>Anda yakin ingin menghapus Sntri / Santri Wati bernama <b><span id="delete_name" class="bolder"></span></b> dari presensi?</p>
+                  <p>Anda yakin ingin menghapus nilai Santri / Santri Wati bernama <b><span id="delete_name" class="bolder"></span></b>?</p>
               </div>
           </div>
           <div class="modal-footer justify-content-between">
@@ -186,13 +188,13 @@
 
   function addData(){
     $("#button-save").show();
-    $("#button-save").text("Tambah Presensi");
+    $("#button-save").text("Tambah Santri / Santri Wati");
     resetForm();
     getSantri();
   }
 
   function deleteData(data) {
-    $("#delete_id").val(data.presensi_id);
+    $("#delete_id").val(data.nilai_id);
     $("#delete_name").text(data.nama_lengkap);
   }
 
@@ -200,7 +202,7 @@
       $.ajax({
           url: "{{ route('master.santri') }}",
           type: "GET",
-          data: {"format": "json", "kelas": "{{ $jadwal->kelas_id }}"},
+          data: {"format": "json", "kelas": "{{ $mapel->kelas_id }}"},
           dataType: "json",
           success:function(data) {
             $('#santri').empty();

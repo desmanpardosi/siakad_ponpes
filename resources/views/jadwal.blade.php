@@ -15,6 +15,7 @@
         <thead>
           <tr>
             <th>{{ __('No') }}</th>
+            <th>{{ __('Tahun Pelajaran') }}</th>
             <th>{{ __('Hari') }}</th>
             <th>{{ __('Jam') }}</th>
             <th>{{ __('Mata Pelajaran') }}</th>
@@ -28,6 +29,7 @@
           @foreach($jadwal as $key => $m)
             <tr>
               <td class="text-center">{{ $jadwal->firstItem() + $key }}</td>
+              <td>{{ $m->tahun_pelajaran }}</td>
               <td>{{ $m->nama_hari }}</td>
               <td>{{ $m->jam }}</td>
               <td>{{ $m->mapel }}</td>
@@ -60,6 +62,12 @@
           <form role="form" id="save" action="{{ route('master.jadwal.save') }}" method="post" enctype="multipart/form-data">
             @csrf
             <div class="form-group row">
+              <label for="mapel" class="col-sm-4 col-form-label">Mata Pelajaran</label>
+              <div class="col-sm-8">
+                <select class="form-control select2" style="width: 100%;" id="mapel" name="mapel"></select>
+              </div>
+            </div>
+            <div class="form-group row">
               <label for="hari" class="col-sm-4 col-form-label">Hari</label>
               <div class="col-sm-8">
                 <select class="form-control select2" style="width: 100%;" id="hari" name="hari" onchange="getJam()">
@@ -81,9 +89,9 @@
               </div>
             </div>
             <div class="form-group row">
-              <label for="mapel" class="col-sm-4 col-form-label">Mata Pelajaran</label>
+              <label for="tp" class="col-sm-4 col-form-label">Tahun Pelajaran</label>
               <div class="col-sm-8">
-                <select class="form-control select2" style="width: 100%;" id="mapel" name="mapel"></select>
+                <select class="form-control select2" style="width: 100%;" id="tp" name="tp"></select>
               </div>
             </div>
           </form>
@@ -131,6 +139,7 @@
     $("#button-save").text("Tambah Jadwal Pelajaran");
     resetForm();
     getMapel();
+    getTahun();
   }
 
   function view(url){
@@ -149,6 +158,22 @@
             $('#jp').append('<option value="">.:: Pilih Jam Pelajaran ::.</option>');
             $.each(data, function(key, value) {
               $('#jp').append('<option value="'+ value.jp_id +'">'+ value.jam +'</option>');
+            });
+          }
+      });
+  }
+
+  function getTahun(){
+      $.ajax({
+          url: "{{ route('master.tp') }}",
+          type: "GET",
+          data: {"format": "json"},
+          dataType: "json",
+          success:function(data) {
+            $('#tp').empty();
+            $('#tp').append('<option value="">.:: Pilih Tahun Pelajaran ::.</option>');
+            $.each(data, function(key, value) {
+              $('#tp').append('<option value="'+ value.tahun_id +'">'+ value.tahun_pelajaran +'</option>');
             });
           }
       });

@@ -1064,7 +1064,8 @@ class DashboardController extends Controller
         $nama_hari = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu", "Minggu"];
 
         if(empty($req->jadwal_id)){
-            $mapel = DB::table("jadwal_pelajaran")->select("jadwal_pelajaran.*", "jam_pelajaran.*", "mapel.*", "kelas.kelas_semester", "users.name as guru")
+            $mapel = DB::table("jadwal_pelajaran")->select("tahun_pelajaran.*", "jadwal_pelajaran.*", "jam_pelajaran.*", "mapel.*", "kelas.kelas_semester", "users.name as guru")
+                    ->LeftJoin("tahun_pelajaran", "tahun_pelajaran.tahun_id", "=", "jadwal_pelajaran.tahun_id")
                     ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
                     ->LeftJoin("mapel", "mapel.mapel_id", "=", "jadwal_pelajaran.mapel_id")
                     ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
@@ -1082,7 +1083,8 @@ class DashboardController extends Controller
 
             return View::make('presensi')->with(compact("mapel"));
         } else {
-            $jadwal     = DB::table("jadwal_pelajaran")->select("jadwal_pelajaran.*", "jam_pelajaran.*", "mapel.*", "kelas.kelas_semester", "users.name as guru")
+            $jadwal     = DB::table("jadwal_pelajaran")->select("tahun_pelajaran.*", "jadwal_pelajaran.*", "jam_pelajaran.*", "mapel.*", "kelas.kelas_semester", "users.name as guru")
+                        ->LeftJoin("tahun_pelajaran", "tahun_pelajaran.tahun_id", "=", "jadwal_pelajaran.tahun_id")
                         ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
                         ->LeftJoin("mapel", "mapel.mapel_id", "=", "jadwal_pelajaran.mapel_id")
                         ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
@@ -1152,6 +1154,63 @@ class DashboardController extends Controller
             $req->session()->flash('success', "Presensi berhasil dihapus.");
         } else {
             $req->session()->flash('error', "Presensi gagal dihapus!");
+        }
+
+        return redirect()->back();
+    }
+
+    public function tp(Request $req)
+    {
+        $tp = DB::table("tahun_pelajaran")->select("tahun_pelajaran.*")
+                ->where("tahun_pelajaran.NA", "N");
+
+        if ($req->format == "json") {
+            $tahun = $req->tahun;
+
+            if(!empty($hari)){
+                $tp = $tp->where("tahun_id", $tahun);
+            }
+
+            $tp = $tp->get();
+
+            return response()->json($tp);
+        } else {
+            $tp = $tp->orderBy("tahun_pelajaran.tahun_id", "asc")->paginate(25);
+
+            return View::make('tp')->with(compact("tp"));
+        }
+    }
+
+    public function tp_save(Request $req){
+        $req->validate([
+            'tahun'     => 'required',
+        ],
+        [
+            'tahun.required'    => 'Tahun Pelajaran belum diisi! (Contoh: 2024/2025)',
+        ]);
+
+        $data = [
+            "tahun_pelajaran"   => $req->tahun
+        ];
+
+        $add = DB::table('tahun_pelajaran')->insertGetId($data);
+
+        if($add){
+            $req->session()->flash('success', "Tahun Pelajaran berhasil ditambahkan.");
+        } else {
+            $req->session()->flash('error', "Tahun Pelajaran gagal ditambahkan!");
+        }
+        
+        return redirect()->back();
+    }
+
+    public function tp_delete(Request $req)
+    {
+        $update = DB::table('tahun_pelajaran')->where("tahun_id", $req->delete_id)->update(["NA" => "Y"]);
+        if ($update) {
+            $req->session()->flash('success', "Tahun Pelajaran berhasil dihapus.");
+        } else {
+            $req->session()->flash('error', "Tahun Pelajaran gagal dihapus!");
         }
 
         return redirect()->back();
@@ -1232,7 +1291,8 @@ class DashboardController extends Controller
     {
         $nama_hari = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu", "Minggu"];
 
-        $jadwal = DB::table("jadwal_pelajaran")->select("jadwal_pelajaran.*", "jam_pelajaran.*", "users.name", "mapel.*", "kelas.kelas_semester")
+        $jadwal = DB::table("jadwal_pelajaran")->select("tahun_pelajaran", "jadwal_pelajaran.*", "jam_pelajaran.*", "users.name", "mapel.*", "kelas.kelas_semester")
+                ->LeftJoin("tahun_pelajaran", "tahun_pelajaran.tahun_id", "=", "jadwal_pelajaran.tahun_id")
                 ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
                 ->LeftJoin("mapel", "mapel.mapel_id", "=", "jadwal_pelajaran.mapel_id")
                 ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
@@ -1252,19 +1312,23 @@ class DashboardController extends Controller
         $req->validate([
             'jp'        => 'required|exists:jam_pelajaran,jp_id',
             'mapel'     => 'required|exists:mapel,mapel_id',
+            'tp'        => 'required|exists:tahun_pelajaran,tahun_id',
         ],
         [
             'jp.required'       => 'Jam Pelajaran belum dipilih!',
             'jp.exists'         => 'Jam Pelajaran tidak ditemukan!',
+            'tp.required'       => 'Tahun Pelajaran belum dipilih!',
+            'tp.exists'         => 'Tahun Pelajaran tidak ditemukan!',
             'mapel.required'    => 'Mata Pelajaran belum dipilih!',
             'mapel.exists'      => 'Mata Pelajaran tidak ditemukan!',
         ]);
 
-        $exists = DB::table("jadwal_pelajaran")->where([["jp_id", $req->jp], ["mapel_id", $req->mapel]])->get()->count();
+        $exists = DB::table("jadwal_pelajaran")->where([["tahun_id", $req->tp], ["jp_id", $req->jp], ["mapel_id", $req->mapel]])->get()->count();
 
         if($exists == 0){
             $data = [
                 "jp_id"     => $req->jp,
+                "tahun_id"  => $req->tp,
                 "mapel_id"  => $req->mapel,
             ];
 
@@ -1292,6 +1356,167 @@ class DashboardController extends Controller
         }
 
         return redirect()->back();
+    }
+
+    public function nilai_huruf($nilai){
+        $nilai = abs($nilai);
+		$huruf = array("", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas");
+		$nilai_huruf = "";
+		if ($nilai < 12) {
+			$nilai_huruf = " ". $huruf[$nilai];
+		} else if ($nilai <20) {
+			$nilai_huruf = $this->nilai_huruf($nilai - 10). " Belas ";
+		} else if ($nilai < 100) {
+			$nilai_huruf = $this->nilai_huruf($nilai/10)." Puluh ". $this->nilai_huruf($nilai % 10);
+		} else if ($nilai < 200) {
+			$nilai_huruf = " Seratus" . $this->nilai_huruf($nilai - 100);
+		} else if ($nilai < 1000) {
+			$nilai_huruf = $this->nilai_huruf($nilai/100) . " Ratus " . $this->nilai_huruf($nilai % 100);
+		} else if ($nilai < 2000) {
+			$nilai_huruf = " Seribu " . $this->nilai_huruf($nilai - 1000);
+		}
+
+        if($nilai<0) {
+			$hasil = "Minus ". trim($nilai_huruf);
+		} else {
+			$hasil = trim($nilai_huruf);
+		}
+
+        return $hasil;
+    }
+
+    public function nilai(Request $req)
+    {
+        $nama_hari = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu", "Minggu"];
+
+        if(empty($req->mapel_id)){
+            $mapel = DB::table("mapel")->select("tahun_pelajaran.*", "jadwal_pelajaran.jadwal_id", "jadwal_pelajaran.jp_id", "jadwal_pelajaran.mapel_id", "jam_pelajaran.hari", "jam_pelajaran.jam", "mapel.mapel", "kelas.kelas_semester", "users.name as guru")
+                    ->LeftJoin("jadwal_pelajaran", "jadwal_pelajaran.mapel_id", "=", "mapel.mapel_id")
+                    ->LeftJoin("tahun_pelajaran", "tahun_pelajaran.tahun_id", "=", "jadwal_pelajaran.tahun_id")
+                    ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
+                    ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+                    ->LeftJoin("users", "users.id", "=", "mapel.guru")
+                    ->where([["mapel.NA", "N"], ["guru", Auth::user()->id]]);
+
+            $mapel = $mapel->orderBy("jam_pelajaran.hari", "asc")
+                    ->orderBy("jam_pelajaran.jam", "asc")
+                    ->orderBy("mapel.mapel", "asc")
+                    ->groupBy("mapel.mapel_id")
+                    ->paginate(25);
+
+            foreach($mapel  as $m){
+                $m->nama_hari = $nama_hari[$m->hari];
+            }
+
+            return View::make('nilai')->with(compact("mapel"));
+        } else {
+            $mapel     = DB::table("mapel")->select("tahun_pelajaran.*", "jadwal_pelajaran.*", "jam_pelajaran.*", "mapel.*", "kelas.kelas_semester", "users.name as guru")
+                        ->LeftJoin("jadwal_pelajaran", "jadwal_pelajaran.mapel_id", "=", "mapel.mapel_id")            
+                        ->LeftJoin("tahun_pelajaran", "tahun_pelajaran.tahun_id", "=", "jadwal_pelajaran.tahun_id")
+                        ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
+                        ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+                        ->LeftJoin("users", "users.id", "=", "mapel.guru")
+                        ->where("mapel.mapel_id", $req->mapel_id)
+                        ->groupBy("mapel.mapel_id")
+                        ->first();
+
+            $mapel->nama_hari = $nama_hari[$mapel->hari];
+
+            $nilai   = DB::table("nilai")->select("nilai.nilai", "kelas.kelas_semester", "santri.*", "users.name as guru")
+                        ->LeftJoin("jadwal_pelajaran", "jadwal_pelajaran.mapel_id", "=", "nilai.mapel_id")
+                        ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
+                        ->LeftJoin("mapel", "mapel.mapel_id", "=", "jadwal_pelajaran.mapel_id")
+                        ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+                        ->LeftJoin("santri", "santri.kelas_id", "=", "kelas.kelas_id")
+                        ->LeftJoin("users", "users.id", "=", "mapel.guru")
+                        ->where("nilai.mapel_id", $req->mapel_id)
+                        ->orderBy("nilai.nilai_id", "desc")
+                        ->groupBy("mapel.mapel_id")
+                        ->paginate(50);
+
+            foreach($nilai as $n){
+                $n->nilai_huruf = $this->nilai_huruf($n->nilai);
+            }
+
+            return View::make('nilai_input')->with(compact("nilai", "mapel"));
+        }
+    }
+
+    public function nilai_save(Request $req){
+        $req->validate([
+            'mapel'     => 'required|exists:mapel,mapel_id',
+            'santri'    => 'required|exists:santri,santri_id',
+            'nilai'     => 'required|numeric'
+        ],
+        [
+            'mapel.required'        => 'Mata Pelajaran belum dipilih!',
+            'mapel.exists'          => 'Mata Pelajaran tidak ditemukan!',
+            'santri.required'       => 'Santri / Santri Wati belum dipilih!',
+            'santri.exists'         => 'Santri / Santri Wati tidak ditemukan!',
+            'nilai.required'        => 'Nilai belum diisi!',
+            'nilai.numeric'         => 'Nilai harus berupa angka!',
+        ]);
+
+        $exists = DB::table("nilai")->where([["mapel_id", $req->mapel], ["santri_id", $req->santri]])->get()->count();
+
+        if($exists == 0){
+            $data = [
+                "mapel_id"      => $req->mapel,
+                "santri_id"     => $req->santri,
+                "nilai"         => $req->nilai,
+            ];
+
+            $add = DB::table('nilai')->insertGetId($data);
+
+            if($add){
+                $req->session()->flash('success', "Nilai Santri / Santri Wati berhasil ditambahkan.");
+            } else {
+                $req->session()->flash('error', "Nilai Santri / Santri Wati gagal ditambahkan!");
+            }
+        } else {
+            $req->session()->flash('error', "Nilai Santri / Santri Wati tersebut sudah ditambahkan!");
+        }
+
+        return redirect()->back();
+    }
+
+    public function nilai_delete(Request $req)
+    {
+        $update = DB::table('nilai')->where("nilai_id", $req->delete_id)->delete();
+        if ($update) {
+            $req->session()->flash('success', "Nilai berhasil dihapus.");
+        } else {
+            $req->session()->flash('error', "Nilai gagal dihapus!");
+        }
+
+        return redirect()->back();
+    }
+
+    public function transkrip_nilai(Request $req)
+    {
+        $santri = DB::table('santri')->select("santri.*")
+                ->where("nis", Auth::user()->username)->first();
+
+        $nilai   = DB::table("mapel")->select("nilai.*", "jadwal_pelajaran.*", "jam_pelajaran.*", "mapel.*", "kelas.kelas_semester", "santri.*", "users.name as guru")
+        ->LeftJoin("nilai", "nilai.mapel_id", "=", "mapel.mapel_id")            
+        ->LeftJoin("jadwal_pelajaran", "jadwal_pelajaran.mapel_id", "=", "mapel.mapel_id")
+        ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
+        ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+        ->LeftJoin("santri", "santri.kelas_id", "=", "kelas.kelas_id")
+        ->LeftJoin("users", "users.id", "=", "mapel.guru")
+        ->where("santri.santri_id", $santri->santri_id);
+
+        if(!empty($req->tahun)){
+            $nilai = $nilai->where("tahun_id", $req->tahun);
+        }
+        
+        $nilai = $nilai->groupBy("mapel.mapel_id")->get();
+
+        foreach($nilai as $n){
+            $n->nilai_huruf = $this->nilai_huruf($n->nilai);
+        }
+        
+        return View::make('transkrip_nilai')->with(compact("santri", "nilai"));
     }
 
 }

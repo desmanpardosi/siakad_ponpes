@@ -1,5 +1,5 @@
 @extends('layouts.main')
-@section('title', __('Presensi'))
+@section('title', __('Nilai'))
 @section('custom-css')
 @endsection
 @section('content')
@@ -13,8 +13,6 @@
         <thead>
           <tr>
             <th>No.</th>
-            <th>Hari</th>
-            <th>Jam Pelajaran</th>
             <th>Mata Pelajaran</th>
             <th>Kelas / Semester</th>
             <th>Tahun Pelajaran</th>
@@ -27,18 +25,16 @@
           @foreach($mapel as $key => $m)
             <tr>
               <td class="text-center">{{ $mapel->firstItem() + $key }}</td>
-              <td>{{ $m->nama_hari }}</td>
-              <td>{{ $m->jam }}</td>
               <td>{{ $m->mapel }}</td>
               <td>{{ $m->kelas_semester }}</td>
               <td>{{ $m->tahun_pelajaran }}</td>
               <td>{{ $m->guru }}</td>
-              <td class="text-center"><button type="button" class="btn btn-success btn-xs" onclick="view('{{ route("presensi") }}/{{ $m->jadwal_id }}')"><i class="fa fa-calendar-check-o"></i> Input Presensi</button></td>
+              <td class="text-center"><button type="button" class="btn btn-success btn-xs" onclick="view('{{ route("nilai") }}/{{ $m->mapel_id }}')"><i class="fa fa-calendar-check-o"></i> Input Nilai</button></td>
             </tr>
           @endforeach
         @else
             <tr>
-                <td colspan="7">{{ __('Belum ada data') }}</td>
+                <td colspan="6">{{ __('Belum ada data') }}</td>
             </tr>
         @endif
         </tfoot>

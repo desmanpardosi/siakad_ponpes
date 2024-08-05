@@ -104,9 +104,27 @@
 
 					<b class="arrow"></b>
 				</li>
+				<li class="{{ (Route::current()->getName() == 'nilai')? 'active highlight':''}}">
+					<a href="{{ route('nilai') }}">
+						<i class="menu-icon fa fa-list-ol"></i>
+						Nilai
+					</a>
+
+					<b class="arrow"></b>
+				</li>
+				@endif
+				@if(Auth::check() && Auth::user()->role == 3)
+				<li class="{{ (Route::current()->getName() == 'transkrip_nilai')? 'active highlight':''}}">
+					<a href="{{ route('transkrip_nilai') }}">
+						<i class="menu-icon fa fa-list-ol"></i>
+						Transkrip Nilai
+					</a>
+
+					<b class="arrow"></b>
+				</li>
 				@endif
 				@if(Auth::check() && Auth::user()->role == 0 || Auth::check() && Auth::user()->role == 1)
-				<li class="{{ (Route::current()->getName() == 'master.jadwal') || (Route::current()->getName() == 'master.jp') || (Route::current()->getName() == 'master.mapel') || (Route::current()->getName() == 'master.kelas') || (Route::current()->getName() == 'master.ruangan') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pemasukan.kategori') || (Route::current()->getName() == 'master.santri') || (Route::current()->getName() == 'master.staff') || (Route::current()->getName() == 'master.guru') || (Route::current()->getName() == 'master.users') || (Route::current()->getName() == 'master.assets')? 'active highlight':''}}">
+				<li class="{{ (Route::current()->getName() == 'master.tp') || (Route::current()->getName() == 'master.jadwal') || (Route::current()->getName() == 'master.jp') || (Route::current()->getName() == 'master.mapel') || (Route::current()->getName() == 'master.kelas') || (Route::current()->getName() == 'master.ruangan') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pemasukan.kategori') || (Route::current()->getName() == 'master.santri') || (Route::current()->getName() == 'master.staff') || (Route::current()->getName() == 'master.guru') || (Route::current()->getName() == 'master.users') || (Route::current()->getName() == 'master.assets')? 'active highlight':''}}">
 					<a href="#" class="dropdown-toggle">
 						<i class="menu-icon fa fa-folder"></i>
 						<span class="menu-text">
@@ -203,6 +221,14 @@
 							<a href="{{ route('master.staff') }}">
 								<i class="menu-icon fa fa-caret-right"></i>
 								Staff
+							</a>
+
+							<b class="arrow"></b>
+						</li>
+						<li class="{{ (Route::current()->getName() == 'master.tp')? 'active highlight':''}}">
+							<a href="{{ route('master.tp') }}">
+								<i class="menu-icon fa fa-caret-right"></i>
+								Tahun Pelajaran
 							</a>
 
 							<b class="arrow"></b>

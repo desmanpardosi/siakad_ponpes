@@ -15,6 +15,10 @@ Route::post('/pengeluaran', [App\Http\Controllers\DashboardController::class, 'p
 Route::get('/presensi/{jadwal_id?}', [App\Http\Controllers\DashboardController::class, 'presensi'])->name('presensi')->middleware("role:2");
 Route::post('/presensi', [App\Http\Controllers\DashboardController::class, 'presensi_save'])->name('presensi.save')->middleware("role:2");
 Route::delete('/presensi', [App\Http\Controllers\DashboardController::class, 'presensi_delete'])->name('presensi.delete')->middleware("role:2");
+Route::get('/nilai/{mapel_id?}', [App\Http\Controllers\DashboardController::class, 'nilai'])->name('nilai')->middleware("role:2");
+Route::post('/nilai', [App\Http\Controllers\DashboardController::class, 'nilai_save'])->name('nilai.save')->middleware("role:2");
+Route::delete('/nilai', [App\Http\Controllers\DashboardController::class, 'nilai_delete'])->name('nilai.delete')->middleware("role:2");
+Route::get('/transkrip-nilai', [App\Http\Controllers\DashboardController::class, 'transkrip_nilai'])->name('transkrip_nilai')->middleware("role:3");
 
 Route::prefix('laporan')->group(function () {
     Route::get('keuangan', [App\Http\Controllers\DashboardController::class, 'laporan_keuangan'])->name('laporan.keuangan');
@@ -60,4 +64,7 @@ Route::prefix('master')->group(function () {
     Route::get('jadwal', [App\Http\Controllers\DashboardController::class, 'jadwal'])->name('master.jadwal')->middleware("adminRole");
     Route::post('jadwal', [App\Http\Controllers\DashboardController::class, 'jadwal_save'])->name('master.jadwal.save')->middleware("adminRole");
     Route::delete('jadwal', [App\Http\Controllers\DashboardController::class, 'jadwal_delete'])->name('master.jadwal.delete')->middleware("adminRole");
+    Route::get('tp', [App\Http\Controllers\DashboardController::class, 'tp'])->name('master.tp');
+    Route::post('tp', [App\Http\Controllers\DashboardController::class, 'tp_save'])->name('master.tp.save')->middleware("adminRole");
+    Route::delete('tp', [App\Http\Controllers\DashboardController::class, 'tp_delete'])->name('master.tp.delete')->middleware("adminRole");
 });
