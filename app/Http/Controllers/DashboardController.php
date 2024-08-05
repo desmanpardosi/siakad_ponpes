@@ -45,7 +45,54 @@ class DashboardController extends Controller
      */
     
     public function home(Request $req){
-        return View::make('home');
+        $pengumuman = DB::table('pengumuman')->where("NA", "N")->get();
+        return View::make('home')->with(compact("pengumuman"));
+    }
+
+    public function pengumuman(Request $req){
+        $pengumuman = DB::table('pengumuman')->select("pengumuman.*")->where("NA", "N")->paginate(25);
+        return View::make('pengumuman')->with(compact("pengumuman"));
+    }
+
+    public function pengumuman_save(Request $req){
+        $req->validate([
+            'judul'             => 'required',
+            'deskripsi'         => 'required'
+            
+        ],
+        [
+            'judul.required'        => 'Judul belum diisi',
+            'deskripsi.required'    => 'Pengumuman belum diisi',
+        ]);
+
+        $data = [
+            "judul"         => $req->judul,
+            "deskripsi"     => $req->deskripsi,
+            "user_buat"     => Auth::user()->username
+        ];
+
+        $add = DB::table('pengumuman')->insertGetId($data);
+
+        if($add){
+            $req->session()->flash('success', "Pengumuman berhasil dibuat.");
+        } else {
+            $req->session()->flash('error', "Pengumuman gagal dibuat!");
+        }
+
+
+        return redirect()->back();
+    }
+
+    public function pengumuman_delete(Request $req)
+    {
+        $update = DB::table('pengumuman')->where("pengumuman_id", $req->delete_id)->update(["NA" => "Y"]);
+        if ($update) {
+            $req->session()->flash('success', "Pengumuman berhasil dihapus.");
+        } else {
+            $req->session()->flash('error', "Pengumuman gagal dihapus!");
+        }
+
+        return redirect()->back();
     }
 
     public function settings(Request $req){
@@ -76,7 +123,7 @@ class DashboardController extends Controller
             if($updatePass){
                 $req->session()->flash('success', "Password berhasil diganti.");
             } else {
-                $req->session()->flash('success', "Password gagal diganti!");
+                $req->session()->flash('error', "Password gagal diganti!");
             }
 
         } else {

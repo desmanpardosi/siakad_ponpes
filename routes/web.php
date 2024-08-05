@@ -67,4 +67,7 @@ Route::prefix('master')->group(function () {
     Route::get('tp', [App\Http\Controllers\DashboardController::class, 'tp'])->name('master.tp');
     Route::post('tp', [App\Http\Controllers\DashboardController::class, 'tp_save'])->name('master.tp.save')->middleware("adminRole");
     Route::delete('tp', [App\Http\Controllers\DashboardController::class, 'tp_delete'])->name('master.tp.delete')->middleware("adminRole");
+    Route::get('pengumuman', [App\Http\Controllers\DashboardController::class, 'pengumuman'])->name('master.pengumuman')->middleware("adminRole");
+    Route::post('pengumuman', [App\Http\Controllers\DashboardController::class, 'pengumuman_save'])->name('master.pengumuman.save')->middleware("adminRole");
+    Route::delete('pengumuman', [App\Http\Controllers\DashboardController::class, 'pengumuman_delete'])->name('master.pengumuman.delete')->middleware("adminRole");
 });

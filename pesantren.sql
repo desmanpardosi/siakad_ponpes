@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Waktu pembuatan: 05 Agu 2024 pada 13.52
+-- Waktu pembuatan: 05 Agu 2024 pada 14.16
 -- Versi server: 8.0.39-0ubuntu0.24.04.1
 -- Versi PHP: 8.2.21
 
@@ -253,6 +253,14 @@ CREATE TABLE `pengumuman` (
   `user_buat` varchar(50) DEFAULT NULL,
   `NA` enum('Y','N') NOT NULL DEFAULT 'N'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+--
+-- Dumping data untuk tabel `pengumuman`
+--
+
+INSERT INTO `pengumuman` (`pengumuman_id`, `judul`, `deskripsi`, `tgl_buat`, `user_buat`, `NA`) VALUES
+(1, 'Tes', 'asdsadadad', '2024-08-05 20:59:37', NULL, 'Y'),
+(2, 'Libur Sekolah', 'Sekolah libur dari tanggal 07/08/20224 sampai dengan 10/08/2024.', '2024-08-05 21:16:04', 'superadmin', 'N');
 
 -- --------------------------------------------------------
 
@@ -598,7 +606,7 @@ ALTER TABLE `pengeluaran_kategori`
 -- AUTO_INCREMENT untuk tabel `pengumuman`
 --
 ALTER TABLE `pengumuman`
-  MODIFY `pengumuman_id` bigint NOT NULL AUTO_INCREMENT;
+  MODIFY `pengumuman_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT untuk tabel `presensi`

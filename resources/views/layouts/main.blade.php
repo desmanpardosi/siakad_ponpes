@@ -124,7 +124,7 @@
 				</li>
 				@endif
 				@if(Auth::check() && Auth::user()->role == 0 || Auth::check() && Auth::user()->role == 1)
-				<li class="{{ (Route::current()->getName() == 'master.tp') || (Route::current()->getName() == 'master.jadwal') || (Route::current()->getName() == 'master.jp') || (Route::current()->getName() == 'master.mapel') || (Route::current()->getName() == 'master.kelas') || (Route::current()->getName() == 'master.ruangan') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pemasukan.kategori') || (Route::current()->getName() == 'master.santri') || (Route::current()->getName() == 'master.staff') || (Route::current()->getName() == 'master.guru') || (Route::current()->getName() == 'master.users') || (Route::current()->getName() == 'master.assets')? 'active highlight':''}}">
+				<li class="{{ (Route::current()->getName() == 'master.pengumuman') || (Route::current()->getName() == 'master.tp') || (Route::current()->getName() == 'master.jadwal') || (Route::current()->getName() == 'master.jp') || (Route::current()->getName() == 'master.mapel') || (Route::current()->getName() == 'master.kelas') || (Route::current()->getName() == 'master.ruangan') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pengeluaran.kategori') || (Route::current()->getName() == 'master.pemasukan.kategori') || (Route::current()->getName() == 'master.santri') || (Route::current()->getName() == 'master.staff') || (Route::current()->getName() == 'master.guru') || (Route::current()->getName() == 'master.users') || (Route::current()->getName() == 'master.assets')? 'active highlight':''}}">
 					<a href="#" class="dropdown-toggle">
 						<i class="menu-icon fa fa-folder"></i>
 						<span class="menu-text">
@@ -197,6 +197,14 @@
 							<a href="{{ route('master.mapel') }}">
 								<i class="menu-icon fa fa-caret-right"></i>
 								Mata Pelajaran
+							</a>
+
+							<b class="arrow"></b>
+						</li>
+						<li class="{{ (Route::current()->getName() == 'master.pengumuman')? 'active highlight':''}}">
+							<a href="{{ route('master.pengumuman') }}">
+								<i class="menu-icon fa fa-caret-right"></i>
+								Pengumuman
 							</a>
 
 							<b class="arrow"></b>
