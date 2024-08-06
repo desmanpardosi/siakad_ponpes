@@ -404,6 +404,22 @@
 	<script src="/assets/js/ace.min.js"></script>
 	<script src="/plugins/toastr/toastr.min.js"></script>
 	<script src="{{ url('/plugins/select2/js/select2.full.min.js') }}"></script>
+	<script src="{{ url('/assets/js/bootstrap-datepicker.min.js') }}"></script>
+	<script src="{{ url('/plugins/moment/moment.min.js') }}"></script>
+	<script src="{{ url('/plugins/inputmask/min/jquery.inputmask.bundle.min.js') }}"></script>
+	<script src="{{ url('/plugins/daterangepicker/daterangepicker.js') }}"></script>
+	<script src="{{ url('/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+	<script src="{{ url('/plugins/bs-custom-file-input/bs-custom-file-input.min.js') }}"></script>
+	<script src="{{ url('/plugins/datatables/jquery.dataTables.min.js') }}"></script>
+	<script src="{{ url('/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+	<script src="{{ url('/plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+	<script src="{{ url('/plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+	<script src="{{ url('/plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
+	<script src="{{ url('/plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
+	<script src="{{ url('/plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+	<script src="{{ url('/plugins/pdfmake/pdfmake.min.js') }}"></script>
+	<script src="{{ url('/plugins/pdfmake/vfs_fonts.js') }}"></script>
+	<script src="{{ url('/plugins/jszip/jszip.min.js') }}"></script>
 	@hasSection('custom-js')
 	@yield('custom-js')
 	@endif

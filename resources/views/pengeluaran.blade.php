@@ -28,6 +28,12 @@
           </tr>
         </thead>
         <tbody></tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" style="text-align:center"></th>
+                <th style="text-align:right"></th>
+            </tr>
+        </tfoot>
       </table>
     </div>
   </div>
@@ -71,20 +77,6 @@
 </div>
 @endsection
 @section('custom-js')
-<script src="{{ url('/assets/js/bootstrap-datepicker.min.js') }}"></script>
-<script src="{{ url('/plugins/moment/moment.min.js') }}"></script>
-<script src="{{ url('/plugins/inputmask/min/jquery.inputmask.bundle.min.js') }}"></script>
-<script src="{{ url('/plugins/daterangepicker/daterangepicker.js') }}"></script>
-<script src="{{ url('/plugins/select2/js/select2.full.min.js') }}"></script>
-<script src="{{ url('/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
-<script src="{{ url('/plugins/bs-custom-file-input/bs-custom-file-input.min.js') }}"></script>
-<script src="{{ url('/plugins/datatables/jquery.dataTables.min.js') }}"></script>
-<script src="{{ url('/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
-<script src="{{ url('/plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
-<script src="{{ url('/plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
-<script src="{{ url('/plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
-<script src="{{ url('/plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
-<script src="{{ url('/plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
 <script>
 
 $(function () {
@@ -100,41 +92,67 @@ $(function () {
     });
 
     var table = $('#table').DataTable({
-        bAutoWidth: false,
-        oLanguage: {
-            sEmptyTable: "Belum ada data"
-        },
-        aoColumns : [
-            { sWidth: '5%' },
-            { sWidth: '25%' },
-            { sWidth: '35%' },
-            { sWidth: '35%' },
-        ],
-        dom: 'Bfrtip',
-        responsive: true,
-        buttons: [
-            'csvHtml5','excelHtml5'
-        ],
-        processing: false,
-        serverSide: false,
-        ajax: {
-            "url": "{{ route('pengeluaran') }}",
-            "type": "get",
-            data:function (d) {
-                d.fd = $('input[name="daterange"]').data('daterangepicker').startDate.format('YYYY-MM-DD');
-                d.td = $('input[name="daterange"]').data('daterangepicker').endDate.format('YYYY-MM-DD');
-            }
-        },
-        order: [[0, 'desc']],
-        columns: [
-            {data: 'no', name: 'no'},
-            {data: 'tanggal', name: 'tanggal'},
-            {data: 'kategori', name: 'kategori'},
-            {data: 'nominal', name: 'nominal'},
-        ],
-        'columnDefs': [
-            {"targets": [3], "className": "text-right"}
-        ],
+      bAutoWidth: false,
+      oLanguage: {
+          sEmptyTable: "Belum ada data"
+      },
+      aoColumns : [
+          { sWidth: '5%' },
+          { sWidth: '25%' },
+          { sWidth: '35%' },
+          { sWidth: '35%' },
+      ],
+      dom: 'Bfrtip',
+      responsive: true,
+      buttons: [
+          { extend: 'csvHtml5', footer: true },
+          { extend: 'pdfHtml5', footer: true }
+      ],
+      processing: false,
+      serverSide: false,
+      ajax: {
+          "url": "{{ route('pengeluaran') }}",
+          "type": "get",
+          data:function (d) {
+              d.fd = $('input[name="daterange"]').data('daterangepicker').startDate.format('YYYY-MM-DD');
+              d.td = $('input[name="daterange"]').data('daterangepicker').endDate.format('YYYY-MM-DD');
+          }
+      },
+      order: [[0, 'desc']],
+      columns: [
+          {data: 'no', name: 'no'},
+          {data: 'tanggal', name: 'tanggal'},
+          {data: 'kategori', name: 'kategori'},
+          {data: 'nominal', name: 'nominal'},
+      ],
+      'columnDefs': [
+          {"targets": [3], "className": "text-right"}
+      ],
+      "footerCallback": function (row, data, start, end, display) {
+          var api = this.api(), data;
+
+          var intVal = function(i) {
+              return typeof i === 'string' ?
+                  i.replace(/[\$.]/g, '') * 1 :
+                  typeof i === 'number' ?
+                      i : 0;
+          };
+
+          var separator = function(i){
+              let angka = i.toString();
+              return angka.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+          };
+
+          var pengeluaran = api
+              .column(3)
+              .data()
+              .reduce(function (a, b) {
+                  return intVal(a) + intVal(b);
+              }, 0);
+
+          $(api.column(3).footer()).html(separator(pengeluaran));
+
+      },
     });
     $(".filter").click(function(){
         table.ajax.reload();

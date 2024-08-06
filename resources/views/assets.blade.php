@@ -12,11 +12,11 @@
       <table id="table" class="table table-striped table-bordered table-hover">
         <thead>
           <tr>
-            <th>{{ __('No') }}</th>
-            <th>{{ __('Ruangan') }}</th>
-            <th>{{ __('Nama Asset') }}</th>
-            <th>{{ __('Tgl. Buat') }}</th>
-            <th>{{ __('User') }}</th>
+            <th>No.</th>
+            <th>Ruangan</th>
+            <th>Nama Asset</th>
+            <th>Jumlah</th>
+            <th>Tgl. Buat</th>
             <th></th>
           </tr>
         </thead>
@@ -27,14 +27,14 @@
               <td class="text-center">{{ $assets->firstItem() + $key }}</td>
               <td>{{ $m->nama_ruangan }}</td>
               <td>{{ $m->nama_asset }}</td>
+              <td>{{ $m->jumlah }}</td>
               <td>{{ date("d/m/Y H:i:s", strtotime($m->tgl_buat)) }}</td>
-              <td>{{ $m->user_buat }}</td>
               <td class="text-center"><button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick="deleteData({{ json_encode($assets[$loop->iteration-1]) }})"><i class="fa fa-trash"></i></button></td>
             </tr>
           @endforeach
         @else
             <tr>
-                <td colspan="3">{{ __('Belum ada data') }}</td>
+                <td colspan="6">{{ __('Belum ada data') }}</td>
             </tr>
         @endif
         </tfoot>
@@ -66,6 +66,12 @@
                 <label for="nama_asset" class="col-sm-4 col-form-label">Nama Asset</label>
                 <div class="col-sm-8">
                   <input type="text" class="form-control" id="nama_asset" name="nama_asset">
+                </div>
+              </div>
+              <div class="form-group row">
+                <label for="jumlah" class="col-sm-4 col-form-label">Jumlah</label>
+                <div class="col-sm-8">
+                  <input type="text" class="form-control" id="jumlah" name="jumlah">
                 </div>
               </div>
           </form>

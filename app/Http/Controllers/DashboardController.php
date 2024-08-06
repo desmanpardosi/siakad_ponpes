@@ -313,7 +313,11 @@ class DashboardController extends Controller
             }
 
             foreach($ruangan as $r){
-                $r->jumlah_asset =  DB::table("assets")->where("assets.ruangan_id", $r->ruangan_id)->count();
+                $asset              = DB::table("assets")->where("assets.ruangan_id", $r->ruangan_id)->get();
+                $r->jumlah_asset    = 0;
+                foreach($asset as $a){
+                    $r->jumlah_asset = $r->jumlah_asset+$a->jumlah;
+                }
             }
 
             return View::make('ruangan')->with(compact("ruangan"));
@@ -366,6 +370,7 @@ class DashboardController extends Controller
         $assets = DB::table("assets")->select("assets.*", "ruangan.nama_ruangan")
                     ->LeftJoin("ruangan", "ruangan.ruangan_id", "=", "assets.ruangan_id")
                     ->where("assets.NA", "N");
+
         if (!empty($ruangan)) {
             $assets = $assets->where("assets.ruangan_id", $ruangan)
                     ->orderBy("assets.asset_id", "desc")            
@@ -383,18 +388,23 @@ class DashboardController extends Controller
 
         $req->validate([
             'ruangan'       => 'required|exists:ruangan,ruangan_id',
-            'nama_asset'    => 'required'
+            'nama_asset'    => 'required',
+            'jumlah'        => 'required|numeric|min:1'
             
         ],
         [
             'ruangan.required'      => 'Ruangan belum dipilih!',
             'ruangan.exists'        => 'Ruangan tidak tersedia!',
-            'nama_asset.required'   => 'Nama Asset belum diisi!'
+            'nama_asset.required'   => 'Nama Asset belum diisi!',
+            'jumlah.required'       => 'Jumlah belum diisi!',
+            'jumlah.numeric'        => 'Jumlah harus berupa angka!',
+            'jumlah.min'            => 'Jumlah minimal 1!',
         ]);
 
         $data = [
             "nama_asset"    => $req->nama_asset,
             "ruangan_id"    => $req->ruangan,
+            "jumlah"        => $req->jumlah,
             "user_buat"     => Auth::user()->username,
         ];
 
@@ -930,7 +940,7 @@ class DashboardController extends Controller
                 if($k->jenis == 0){
                     $pemasukan      = number_format($k->nominal, 0, ",", ".");
                     $pengeluaran    = null;
-                    $kategori = DB::table('pemasukan_kategori')->select('pemasukan_kategori.kategori')->first();
+                    $kategori = DB::table('pemasukan_kategori')->select('pemasukan_kategori.kategori')->where("kategori_id", $k->kategori_id)->first();
                     if(!empty($kategori)){
                         $kategori = $kategori->kategori;
                     } else {

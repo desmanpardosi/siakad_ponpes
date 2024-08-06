@@ -26,6 +26,13 @@
           </tr>
         </thead>
         <tbody></tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" style="text-align:center"></th>
+                <th style="text-align:right"></th>
+                <th style="text-align:right"></th>
+            </tr>
+        </tfoot>
       </table>
     </div>
   </div>
@@ -46,6 +53,9 @@
 <script src="{{ url('/plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
 <script src="{{ url('/plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
 <script src="{{ url('/plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+<script src="{{ url('/plugins/pdfmake/pdfmake.min.js') }}"></script>
+<script src="{{ url('/plugins/pdfmake/vfs_fonts.js') }}"></script>
+<script src="{{ url('/plugins/jszip/jszip.min.js') }}"></script>
 <script>
 
 $(function () {
@@ -75,7 +85,9 @@ $(function () {
         dom: 'Bfrtip',
         responsive: true,
         buttons: [
-            'csvHtml5','excelHtml5'
+
+            { extend: 'csvHtml5', footer: true },
+            { extend: 'pdfHtml5', footer: true }
         ],
         processing: false,
         serverSide: false,
@@ -98,6 +110,39 @@ $(function () {
         'columnDefs': [
             {"targets": [3,4], "className": "text-right"}
         ],
+        "footerCallback": function (row, data, start, end, display) {
+            var api = this.api(), data;
+
+            var intVal = function(i) {
+                return typeof i === 'string' ?
+                    i.replace(/[\$.]/g, '') * 1 :
+                    typeof i === 'number' ?
+                        i : 0;
+            };
+
+            var separator = function(i){
+                let angka = i.toString();
+                return angka.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            };
+
+            var pemasukan = api
+                .column(3)
+                .data()
+                .reduce(function (a, b) {
+                    return intVal(a) + intVal(b);
+                }, 0);
+
+            var pengeluaran = api
+                .column(4)
+                .data()
+                .reduce(function (a, b) {
+                    return intVal(a) + intVal(b);
+                }, 0);
+
+            $(api.column(3).footer()).html(separator(pemasukan));
+            $(api.column(4).footer()).html(separator(pengeluaran));
+
+        },
     });
     $(".filter").click(function(){
         table.ajax.reload();
