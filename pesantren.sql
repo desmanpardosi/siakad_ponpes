@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Waktu pembuatan: 05 Agu 2024 pada 14.16
+-- Waktu pembuatan: 06 Agu 2024 pada 03.05
 -- Versi server: 8.0.39-0ubuntu0.24.04.1
 -- Versi PHP: 8.2.21
 
@@ -31,6 +31,7 @@ CREATE TABLE `assets` (
   `asset_id` bigint NOT NULL,
   `ruangan_id` bigint NOT NULL,
   `nama_asset` varchar(50) NOT NULL,
+  `jumlah` int NOT NULL DEFAULT '0',
   `tgl_buat` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `user_buat` varchar(50) NOT NULL,
   `NA` enum('Y','N') CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT 'N'
@@ -40,14 +41,16 @@ CREATE TABLE `assets` (
 -- Dumping data untuk tabel `assets`
 --
 
-INSERT INTO `assets` (`asset_id`, `ruangan_id`, `nama_asset`, `tgl_buat`, `user_buat`, `NA`) VALUES
-(9, 1, 'Kursi', '2024-08-01 10:40:20', 'superadmin', 'N'),
-(10, 1, 'Meja', '2024-08-01 10:40:28', 'superadmin', 'N'),
-(11, 1, 'TV', '2024-08-01 10:40:32', 'superadmin', 'N'),
-(12, 2, 'Kursi', '2024-08-01 10:41:01', 'superadmin', 'N'),
-(13, 2, 'Meja', '2024-08-01 10:41:05', 'superadmin', 'N'),
-(14, 1, 'Laptop', '2024-08-01 10:41:13', 'superadmin', 'N'),
-(15, 2, 'Laptop', '2024-08-01 10:41:19', 'superadmin', 'N');
+INSERT INTO `assets` (`asset_id`, `ruangan_id`, `nama_asset`, `jumlah`, `tgl_buat`, `user_buat`, `NA`) VALUES
+(9, 1, 'Kursi', 0, '2024-08-01 10:40:20', 'superadmin', 'N'),
+(10, 1, 'Meja', 0, '2024-08-01 10:40:28', 'superadmin', 'N'),
+(11, 1, 'TV', 0, '2024-08-01 10:40:32', 'superadmin', 'N'),
+(12, 2, 'Kursi', 0, '2024-08-01 10:41:01', 'superadmin', 'N'),
+(13, 2, 'Meja', 0, '2024-08-01 10:41:05', 'superadmin', 'N'),
+(14, 1, 'Laptop', 0, '2024-08-01 10:41:13', 'superadmin', 'N'),
+(15, 2, 'Laptop', 0, '2024-08-01 10:41:19', 'superadmin', 'N'),
+(16, 1, 'Dispenser', 3, '2024-08-05 22:51:39', 'superadmin', 'N'),
+(17, 2, 'Dispenser', 1, '2024-08-05 22:58:12', 'superadmin', 'N');
 
 -- --------------------------------------------------------
 
@@ -143,7 +146,8 @@ CREATE TABLE `keuangan` (
 
 INSERT INTO `keuangan` (`keuangan_id`, `jenis`, `tanggal`, `kategori_id`, `nominal`, `tgl_buat`, `user_buat`) VALUES
 (1, 0, '2024-08-01', 6, 1500000, '2024-08-01 15:10:21', 0),
-(2, 1, '2024-08-01', 3, 500000, '2024-08-01 15:25:46', 0);
+(2, 1, '2024-08-01', 3, 500000, '2024-08-01 15:25:46', 0),
+(3, 0, '2024-08-05', 7, 5000000, '2024-08-05 23:21:28', 0);
 
 -- --------------------------------------------------------
 
@@ -431,7 +435,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `name`, `role`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'superadmin', 'Super Admin', 0, '$2a$12$y6VnBvFXAVxp207MT6oMDOlxP1bXR8/dCWLgtjhl3vunC.791IAQG', 'Wb61ogoi9QyPvaQRiL6QofLdzdqn0jXbqUwee6cxIopKoVFfHdCb2W6ZCGK2', NULL, NULL),
+(1, 'superadmin', 'Super Admin', 0, '$2a$12$y6VnBvFXAVxp207MT6oMDOlxP1bXR8/dCWLgtjhl3vunC.791IAQG', 'Io3vmd7MOjaqNEEZHOina34TbZlv57DiXJ9XveloD4slgMtgxyBncJg12BCr', NULL, NULL),
 (5, 'admin', 'Admin', 1, '$2y$10$5fVRQuVavslEwTTf0e4oZuwhb53WmqhQ4fV.FZpYlHbWshQnOszdW', NULL, NULL, NULL),
 (6, '121112066', 'DHP', 3, '$2y$10$dbEmNnOnhD66onDUzHZ1d.U.iXjFnNm6D5suECJIb8BDsF2Ow43WO', NULL, NULL, NULL),
 (7, 'guru', 'Guru Bahasa Indonesia, S.Pd.', 2, '$2y$10$Yj2o7H7jU3Ele2k3jo6adOIleCZPDymJAlF9u0QfeDcVTAmaHCZ0.', NULL, NULL, NULL),
@@ -552,7 +556,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT untuk tabel `assets`
 --
 ALTER TABLE `assets`
-  MODIFY `asset_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `asset_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT untuk tabel `jadwal_pelajaran`
@@ -576,7 +580,7 @@ ALTER TABLE `kelas`
 -- AUTO_INCREMENT untuk tabel `keuangan`
 --
 ALTER TABLE `keuangan`
-  MODIFY `keuangan_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `keuangan_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT untuk tabel `mapel`
