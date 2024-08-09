@@ -4,6 +4,7 @@
 
 @endsection
 @section('content')
+@if(Auth::user()->role == 0 || Auth::user()->role == 1)
 <div class="row">
   <div class="col-sm-6">
     <div class="widget-box">
@@ -45,6 +46,7 @@
     </div>
   </div>
 </div>
+@endif
 <div class="row">
   <div class="col-sm-6">
     <div class="widget-box">
