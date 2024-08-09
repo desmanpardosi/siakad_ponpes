@@ -11,7 +11,7 @@
     </div>
   </div>
   <div class="widget-body">
-    <div class="widget-main no-padding">
+    <div class="widget-main">
       <div class="table-responsive">
         <table id="table" class="table table-striped table-bordered table-hover table-responsive" width="100%">
           <thead>
@@ -36,59 +36,11 @@
               <th></th>
             </tr>
           </thead>
-          <tbody>
-          @if(count($santri) > 0)
-            @foreach($santri as $key => $m)
-              <tr>
-                <td class="text-center">{{ $santri->firstItem() + $key }}</td>
-                <td>{{ $m->nis }}</td>
-                <td>{{ $m->nama_lengkap }}</td>
-                <td>{{ $m->nik }}</td>
-                <td>{{ $m->no_kk }}</td>
-                <td>{{ $m->tempat_lahir }}, {{ date("d/m/Y", strtotime($m->tgl_lahir)) }}</td>
-                <td>{{ $m->alamat }}</td>
-                <td>{{ $m->no_hp }}</td>
-                <td>
-                  @if($m->pendidikan_formal == 0)
-                  PAUD
-                  @elseif($m->pendidikan_formal == 1)
-                  MI
-                  @elseif($m->pendidikan_formal == 2)
-                  MTS
-                  @else
-                  SMK
-                  @endif
-                </td>
-                <td>{{ $m->kelas_semester }}</td>
-                <td>{{ $m->nisn }}</td>
-                <td>
-                  @if($m->program_ponpes == 0)
-                  Pondok
-                  @else
-                  Kursus
-                  @endif
-                </td>
-                <td>{{ $m->riwayat_mondok }}</td>
-                <td>{{ $m->nama_ayah }}</td>
-                <td>{{ $m->nama_ibu }}</td>
-                <td>{{ $m->nohp_ortu }}</td>
-                <td>{{ $m->alamat_ortu }}</td>
-                <td class="text-center" style="min-width: 100px;"><button title="Edit" type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#tambah-data" onclick="editData({{ json_encode($santri[$loop->iteration-1]) }})"><i class="fa fa-edit"></i></button> <button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick="deleteData({{ json_encode($santri[$loop->iteration-1]) }})"><i class="fa fa-trash"></i></button></td>
-              </tr>
-            @endforeach
-          @else
-              <tr>
-                  <td colspan="18">{{ __('Belum ada data') }}</td>
-              </tr>
-          @endif
-          </tfoot>
+          <tbody></tbody>
         </table>
       </div>
     </div>
   </div>
-</div>
-<div class="float-right">
-  {{ $santri->links("pagination::bootstrap-4") }}
 </div>
 <div class="modal fade" id="tambah-data">
   <div class="modal-dialog">
@@ -278,13 +230,13 @@
     $("#nik").val(data.nik);
     $("#no_kk").val(data.no_kk);
     $("#tempat_lahir").val(data.tempat_lahir);
-    $("#tgl_lahir").val(data.tgl_lahir);
+    $("#tgl_lahir").datepicker("setDate", new Date(data.tgl_lahir));
     $("#alamat").val(data.alamat);
     $("#no_hp").val(data.no_hp);
-    $("#pendidikan_formal").val(data.pendidikan_formal);
+    $("#pendidikan_formal").val(data.pendidikan_formal_id).trigger("change");
     $("#kelas_semester").val(data.kelas_semester);
     $("#nisn").val(data.nisn);
-    $("#program_ponpes").val(data.program_ponpes);
+    $("#program_ponpes").val(data.program_ponpes_id).trigger("change");;
     $("#riwayat_mondok").val(data.riwayat_mondok);
     $("#nama_ayah").val(data.nama_ayah);
     $("#nama_ibu").val(data.nama_ibu);
@@ -321,5 +273,54 @@
   function view(url){
       window.open(url, "_blank");
   }
+
+  $(function () {
+      $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+      }); 
+      
+      var table = $('#table').DataTable({
+          bAutoWidth: false,
+          oLanguage: {
+              sEmptyTable: "Belum ada data"
+          },
+          dom: 'Bfrtip',
+          responsive: false,
+          buttons: [
+              { extend: 'excelHtml5'},
+              { extend: 'pdfHtml5', orientation: 'potrait'}
+          ],
+          processing: false,
+          serverSide: false,
+          ajax: {
+              "url": "{{ route('master.santri') }}",
+              "data": {"kelas": "{{ request()->kelas }}"},
+              "type": "get"
+          },
+          order: [[0, 'asc']],
+          columns: [
+              {data: 'no', name: 'no'},
+              {data: 'nis', name: 'nis'},
+              {data: 'nama_lengkap', name: 'nama_lengkap'},
+              {data: 'nik', name: 'nik'},
+              {data: 'no_kk', name: 'no_kk'},
+              {data: 'ttl', name: 'ttl'},
+              {data: 'alamat', name: 'alamat'},
+              {data: 'no_hp', name: 'no_hp'},
+              {data: 'pendidikan_formal', name: 'pendidikan_formal'},
+              {data: 'kelas_semester', name: 'kelas_semester'},
+              {data: 'nisn', name: 'nisn'},
+              {data: 'program_ponpes', name: 'program_ponpes'},
+              {data: 'riwayat_mondok', name: 'riwayat_mondok'},
+              {data: 'nama_ayah', name: 'nama_ayah'},
+              {data: 'nama_ibu', name: 'nama_ibu'},
+              {data: 'nohp_ortu', name: 'nohp_ortu'},
+              {data: 'alamat_ortu', name: 'alamat_ortu'},
+              {data: 'action', name: 'action'}
+          ],
+      });
+  });
 </script>
 @endsection

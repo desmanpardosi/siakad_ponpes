@@ -338,33 +338,41 @@ class DashboardController extends Controller
     public function ruangan(Request $req)
     {
 
-        $ruangan = DB::table("ruangan")->select("ruangan.*")->where("NA", "N");
+        $ruangan = DB::table("ruangan")->select("ruangan.*")->where("NA", "N")->get();
 
         if ($req->format == "json") {
-            $ruangan = $ruangan->get();
             return response()->json($ruangan);
         } else {
-            $search = $req->search;
-
-            if (!empty($search)) {
-                $ruangan = $ruangan->where("ruangan.nama_ruangan", "LIKE", "%" . $search . "%")
-                        ->orderBy("ruangan.nama_ruangan", "asc")            
-                        ->paginate(25);
-
-            } else {
-                $ruangan = $ruangan->orderBy("ruangan.nama_ruangan", "asc")
-                        ->paginate(25);
-            }
-
-            foreach($ruangan as $r){
-                $asset              = DB::table("assets")->where("assets.ruangan_id", $r->ruangan_id)->get();
-                $r->jumlah_asset    = 0;
-                foreach($asset as $a){
-                    $r->jumlah_asset = $r->jumlah_asset+$a->jumlah;
+            if ($req->ajax()) {
+                $data   = [];
+                $no     = 1;
+                foreach($ruangan as $d){
+                    $data[] = [
+                        'ruangan_id'        => $d->ruangan_id,
+                        'no'                => $no,
+                        'nama_ruangan'      => $d->nama_ruangan,
+                        'tgl_buat'          => date("d/m/Y", strtotime($d->tgl_buat)),
+                        'user_buat'         => $d->user_buat,
+                        'jumlah_asset'      => DB::table("assets")->where("ruangan_id", $d->ruangan_id)->get()->sum("jumlah")
+                    ];
+                    $no++;
                 }
+    
+                return DataTables::of($data)
+                        ->addIndexColumn()
+                        ->addColumn('jumlah_asset', function($row){
+                            $btn    = "<center><a href=\"".route('master.assets')."?ruangan=".$row['ruangan_id']."\">".$row['jumlah_asset']."</a></center>";
+                            return $btn;
+                        })
+                        ->addColumn('action', function($row){
+                            $btn    = '<center><button title="Edit" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick=\'deleteData('.json_encode($row).')\'><i class="fa fa-trash"></i></button></center>';
+                            return $btn;
+                        })
+                        ->rawColumns(['action','jumlah_asset'])
+                        ->make(true);
             }
 
-            return View::make('ruangan')->with(compact("ruangan"));
+            return View::make('ruangan');
         }
     }
 
@@ -550,22 +558,46 @@ class DashboardController extends Controller
 
     public function staff(Request $req)
     {
-        $search = $req->search;
+        if($req->ajax()){
+            $staff = DB::table("staff")->select("staff.*")->where("staff.staff_type", 1)
+                    ->orderBy("staff.nama_lengkap", "asc")->get();
 
-        $staff = DB::table("staff")->select("staff.*")->where("staff.staff_type", 1);
-        if (!empty($search)) {
-            $staff = $staff->where("staff.nama_lengkap", "LIKE", "%" . $search . "%")
-                    ->orWhere("staff.nik", "LIKE", "%" . $search . "%")
-                    ->orWhere("staff.no_hp", "LIKE", "%" . $search . "%")
-                    ->orderBy("staff.nama_lengkap", "asc")            
-                    ->paginate(25);
 
-        } else {
-            $staff = $staff->orderBy("staff.nama_lengkap", "asc")
-                    ->paginate(25);
+            $data   = [];
+            $no     = 1;
+            foreach($staff as $d){
+                $statusList = ["Sertifikasi", "Honorer", "Lainnya"];
+                $status     = $statusList[$d->status];
+
+                $data[] = [
+                    'staff_id'              => $d->staff_id,
+                    'no'                    => $no,
+                    'nama_lengkap'          => $d->nama_lengkap,
+                    'nik'                   => $d->nik,
+                    'ttl'                   => $d->tempat_lahir.", ".date("d/m/Y", strtotime($d->tgl_lahir)),
+                    'alamat'                => $d->alamat,
+                    'no_hp'                 => $d->no_hp,
+                    'pendidikan_terakhir'   => $d->pendidikan_terakhir,
+                    'bidang_mengajar'       => $d->bidang_mengajar,
+                    'no_sk'                 => $d->no_sk,
+                    'mulai_mengajar'        => $d->mulai_mengajar,
+                    'status_code'           => $d->status,
+                    'status'                => $status,
+                ];
+                $no++;
+            }
+
+            return DataTables::of($data)
+                    ->addIndexColumn()
+                    ->addColumn('action', function($row){
+                        $btn    = '<center><button title="Edit" type="button" class="btn btn-success btn-xs" data-toggle="modal" data-target="#tambah-data" onclick=\'editData('.json_encode($row).')\'><i class="fa fa-edit"></i></button> <button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick=\'deleteData('.json_encode($row).')\'><i class="fa fa-trash"></i></button></center>';
+                        return $btn;
+                    })
+                    ->rawColumns(['action'])
+                    ->make(true);
         }
 
-        return View::make('staff')->with(compact("staff"));
+        return View::make('staff');
     }
 
     public function staff_save(Request $req){
@@ -648,23 +680,66 @@ class DashboardController extends Controller
             $santri = $santri->get();
             return response()->json($santri);
         } else {
-            $search = $req->search;
-            if(!empty($search)) {
-                $santri = $santri->where("santri.nama_lengkap", "LIKE", "%" . $search . "%")
-                        ->orWhere("santri.nis", "LIKE", "%" . $search . "%")
-                        ->orWhere("santri.nik", "LIKE", "%" . $search . "%")
-                        ->orWhere("santri.nisn", "LIKE", "%" . $search . "%")
-                        ->orderBy("santri.nama_lengkap", "asc")            
-                        ->paginate(25);
-
-            } else {
+            if($req->ajax()){
                 $santri = $santri->orderBy("santri.nama_lengkap", "asc");
 
                 if(!empty($req->kelas)){
                     $santri = $santri->where("santri.kelas_id", $req->kelas);
                 }
 
-                $santri = $santri->paginate(25);
+                $santri = $santri->get();
+    
+                $data   = [];
+                $no     = 1;
+                foreach($santri as $d){
+                    $pendidikanFormal   = ["PAUD", "MI", "MTS", "SMK"];
+                    $programPonpes      = ["Pondok", "Kursus"];
+
+                    $pendidikan_formal = null;
+                    if($d->pendidikan_formal !== null){
+                        $pendidikan_formal = $pendidikanFormal[$d->pendidikan_formal];
+                    }
+
+                    $program_ponpes = null;
+                    if($d->program_ponpes !== null){
+                        $program_ponpes = $programPonpes[$d->program_ponpes];
+                    }
+    
+                    $data[] = [
+                        'santri_id'             => $d->santri_id,
+                        'no'                    => $no,
+                        'nama_lengkap'          => $d->nama_lengkap,
+                        'nis'                   => $d->nis,
+                        'nik'                   => $d->nik,
+                        'no_kk'                 => $d->no_kk,
+                        'ttl'                   => $d->tempat_lahir.", ".date("d/m/Y", strtotime($d->tgl_lahir)),
+                        'tgl_lahir'             => $d->tgl_lahir,
+                        'alamat'                => $d->alamat,
+                        'no_hp'                 => $d->no_hp,
+                        'pendidikan_formal_id'  => $d->pendidikan_formal,
+                        'pendidikan_formal'     => $pendidikan_formal,
+                        'kelas_id'              => $d->kelas_id,
+                        'kelas_semester'        => $d->kelas_semester,
+                        'nisn'                  => $d->nisn,
+                        'program_ponpes_id'     => $d->program_ponpes,
+                        'program_ponpes'        => $program_ponpes,
+                        'riwayat_mondok'        => $d->riwayat_mondok,
+                        'nama_ayah'             => $d->nama_ayah,
+                        'nama_ibu'              => $d->nama_ibu,
+                        'nohp_ortu'             => $d->nohp_ortu,
+                        'alamat_ortu'           => $d->alamat_ortu
+                    ];
+                    $no++;
+                }
+    
+                return DataTables::of($data)
+                        ->addIndexColumn()
+                        ->addColumn('action', function($row){
+                            $btn    = '<center><button title="Edit" type="button" class="btn btn-success btn-xs" data-toggle="modal" data-target="#tambah-data" onclick=\'editData('.json_encode($row).')\'><i class="fa fa-edit"></i></button> <button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick=\'deleteData('.json_encode($row).')\'><i class="fa fa-trash"></i></button></center>';
+                            return $btn;
+                        })
+                        ->rawColumns(['action'])
+                        ->make(true);
             }
 
             return View::make('santri')->with(compact("santri"));
