@@ -55,9 +55,13 @@
               <div class="col-sm-8">
                 <select class="form-control select2" style="width: 100%;" id="jenis_lap" name="jenis_lap" onchange="changeGroup()">
                     <option>.:: Pilih Jenis Laporan ::.</option>
+                    @if(Auth::user()->role == 0 || Auth::user()->role == 1)
                     <option value="0">Laporan Harian</option>
+                    @endif
                     <option value="1">Laporan Bulanan</option>
+                    @if(Auth::user()->role == 0 || Auth::user()->role == 1)
                     <option value="2">Laporan Tahunan</option>
+                    @endif
                 </select>
               </div>
             </div>
