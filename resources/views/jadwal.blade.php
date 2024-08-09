@@ -10,46 +10,24 @@
     </div>
   </div>
   <div class="widget-body">
-    <div class="widget-main no-padding">
+    <div class="widget-main">
       <table id="table" class="table table-striped table-bordered table-hover">
         <thead>
           <tr>
-            <th>{{ __('No') }}</th>
-            <th>{{ __('Tahun Pelajaran') }}</th>
-            <th>{{ __('Hari') }}</th>
-            <th>{{ __('Jam') }}</th>
-            <th>{{ __('Mata Pelajaran') }}</th>
-            <th>{{ __('Kelas') }}</th>
-            <th>{{ __('Guru') }}</th>
+            <th>No.</th>
+            <th>Tahun Pelajaran</th>
+            <th>Hari</th>
+            <th>Jam</th>
+            <th>Mata Pelajaran</th>
+            <th>Kelas</th>
+            <th>Guru</th>
             <th></th>
           </tr>
         </thead>
-        <tbody>
-        @if(count($jadwal) > 0)
-          @foreach($jadwal as $key => $m)
-            <tr>
-              <td class="text-center">{{ $jadwal->firstItem() + $key }}</td>
-              <td>{{ $m->tahun_pelajaran }}</td>
-              <td>{{ $m->nama_hari }}</td>
-              <td>{{ $m->jam }}</td>
-              <td>{{ $m->mapel }}</td>
-              <td>{{ $m->kelas_semester }}</td>
-              <td>{{ $m->name }}</td>
-              <td class="text-center"><button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick="deleteData({{ json_encode($jadwal[$loop->iteration-1]) }})"><i class="fa fa-trash"></i></button></td>
-            </tr>
-          @endforeach
-        @else
-            <tr>
-                <td colspan="7">{{ __('Belum ada data') }}</td>
-            </tr>
-        @endif
-        </tfoot>
+        <tbody></tbody>
       </table>
     </div>
   </div>
-</div>
-<div class="float-right">
-  {{ $jadwal->links("pagination::bootstrap-4") }}
 </div>
 <div class="modal fade" id="tambah-data">
   <div class="modal-dialog">
@@ -198,5 +176,44 @@
   function deleteData(data) {
     $("#delete_id").val(data.jadwal_id);
   }
+
+  $(function () {
+      $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+      }); 
+      
+      var table = $('#table').DataTable({
+          bAutoWidth: false,
+          oLanguage: {
+              sEmptyTable: "Belum ada data"
+          },
+          dom: 'Bfrtip',
+          columnDefs: [{ width: '8%', targets: 7 }],
+          responsive: true,
+          buttons: [
+              { extend: 'excelHtml5'},
+              { extend: 'pdfHtml5', orientation: 'potrait'}
+          ],
+          processing: false,
+          serverSide: false,
+          ajax: {
+              "url": "{{ route('master.jadwal') }}",
+              "type": "get"
+          },
+          order: [[0, 'asc']],
+          columns: [
+              {data: 'no', name: 'no'},
+              {data: 'tahun_pelajaran', name: 'tahun_pelajaran'},
+              {data: 'hari', name: 'hari'},
+              {data: 'jam', name: 'jam'},
+              {data: 'mapel', name: 'mapel'},
+              {data: 'kelas', name: 'kelas'},
+              {data: 'guru', name: 'guru'},
+              {data: 'action', name: 'action'},
+          ],
+      });
+  });
 </script>
 @endsection

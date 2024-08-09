@@ -8,7 +8,7 @@
     </div>
   </div>
   <div class="widget-body">
-    <div class="widget-main no-padding">
+    <div class="widget-main">
       <table id="table" class="table table-striped table-bordered table-hover">
         <thead>
           <tr>
@@ -20,30 +20,10 @@
             <th></th>
           </tr>
         </thead>
-        <tbody>
-        @if(count($assets) > 0)
-          @foreach($assets as $key => $m)
-            <tr>
-              <td class="text-center">{{ $assets->firstItem() + $key }}</td>
-              <td>{{ $m->nama_ruangan }}</td>
-              <td>{{ $m->nama_asset }}</td>
-              <td>{{ $m->jumlah }}</td>
-              <td>{{ date("d/m/Y H:i:s", strtotime($m->tgl_buat)) }}</td>
-              <td class="text-center"><button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick="deleteData({{ json_encode($assets[$loop->iteration-1]) }})"><i class="fa fa-trash"></i></button></td>
-            </tr>
-          @endforeach
-        @else
-            <tr>
-                <td colspan="6">{{ __('Belum ada data') }}</td>
-            </tr>
-        @endif
-        </tfoot>
+        <tbody></tbody>
       </table>
     </div>
   </div>
-</div>
-<div class="float-right">
-  {{ $assets->links("pagination::bootstrap-4") }}
 </div>
 <div class="modal fade" id="tambah-data">
   <div class="modal-dialog">
@@ -146,5 +126,58 @@
   function view(url){
       window.open(url, "_blank");
   }
+  
+  $(function () {
+      $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+      }); 
+      
+      var table = $('#table').DataTable({
+          bAutoWidth: false,
+          oLanguage: {
+              sEmptyTable: "Belum ada data"
+          },
+          aoColumns : [
+              { sWidth: '5%' },
+              { sWidth: '20%' },
+              { sWidth: '20%' },
+              { sWidth: '20%' },
+              { sWidth: '25%' },
+              { sWidth: '10%' },
+          ],
+          dom: 'Bfrtip',
+          responsive: true,
+          buttons: [
+              { extend: 'excelHtml5'},
+              {
+                extend: 'pdfHtml5',
+                customize: function (doc) {
+                    doc.content[1].table.widths = [ '5%',  '20%', '20%', '20%', '25%', '10%'];
+                }
+              }
+          ],
+          processing: false,
+          serverSide: false,
+          ajax: {
+              "url": "{{ route('master.assets') }}",
+              "data": {"ruangan": "{{ request()->ruangan }}"},
+              "type": "get"
+          },
+          order: [[0, 'asc']],
+          columns: [
+              {data: 'no', name: 'no'},
+              {data: 'nama_ruangan', name: 'nama_ruangan'},
+              {data: 'nama_asset', name: 'nama_asset'},
+              {data: 'jumlah', name: 'jumlah'},
+              {data: 'tgl_buat', name: 'tgl_buat'},
+              {data: 'action', name: 'action'},
+          ],
+          'columnDefs': [
+              {"targets": [3,4], "className": "text-right"}
+          ]
+      });
+  });
 </script>
 @endsection

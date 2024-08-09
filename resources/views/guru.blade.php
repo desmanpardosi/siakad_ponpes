@@ -8,7 +8,7 @@
     </div>
   </div>
   <div class="widget-body">
-    <div class="widget-main no-padding">
+    <div class="widget-main">
       <div class="table-responsive">
         <table id="table" class="table table-striped table-bordered table-hover">
           <thead>
@@ -27,45 +27,11 @@
               <th></th>
             </tr>
           </thead>
-          <tbody>
-          @if(count($guru) > 0)
-            @foreach($guru as $key => $m)
-              <tr>
-                <td class="text-center">{{ $guru->firstItem() + $key }}</td>
-                <td style="min-width: 100px;">{{ $m->nama_lengkap }}</td>
-                <td>{{ $m->nik }}</td>
-                <td>{{ $m->tempat_lahir }}, {{ date("d/m/Y", strtotime($m->tgl_lahir)) }}</td>
-                <td>{{ $m->alamat }}</td>
-                <td>{{ $m->no_hp }}</td>
-                <td>{{ $m->pendidikan_terakhir }}</td>
-                <td>{{ $m->bidang_mengajar }}</td>
-                <td>{{ $m->no_sk }}</td>
-                <td>{{ $m->mulai_mengajar }}</td>
-                <td>
-                  @if($m->status == 0)
-                  Sertifikasi
-                  @elseif($m->status == 1)
-                  Honorer
-                  @else
-                  Lainnya
-                  @endif
-                </td>
-                <td class="text-center" style="min-width: 100px;"><button title="Edit" type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#tambah-data" onclick="editData({{ json_encode($guru[$loop->iteration-1]) }})"><i class="fa fa-edit"></i></button> <button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick="deleteData({{ json_encode($guru[$loop->iteration-1]) }})"><i class="fa fa-trash"></i></button></td>
-              </tr>
-            @endforeach
-          @else
-              <tr>
-                  <td colspan="12">{{ __('Belum ada data') }}</td>
-              </tr>
-          @endif
-          </tfoot>
+          <tbody></tbody>
         </table>
       </div>
     </div>
   </div>
-</div>
-<div class="float-right">
-  {{ $guru->links("pagination::bootstrap-4") }}
 </div>
 <div class="modal fade" id="tambah-data">
   <div class="modal-dialog">
@@ -218,7 +184,7 @@
     $("#bidang_mengajar").val(data.bidang_mengajar);
     $("#no_sk").val(data.no_sk);
     $("#mulai_mengajar").val(data.mulai_mengajar);
-    $("#status").val(data.status);
+    $("#status").val(data.status_code).trigger("change");;
   }
 
   function deleteData(data) {
@@ -229,5 +195,48 @@
   function view(url){
       window.open(url, "_blank");
   }
+
+  $(function () {
+      $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+      }); 
+      
+      var table = $('#table').DataTable({
+          bAutoWidth: false,
+          oLanguage: {
+              sEmptyTable: "Belum ada data"
+          },
+          dom: 'Bfrtip',
+          columnDefs: [{ width: '8%', targets: 11 }],
+          responsive: true,
+          buttons: [
+              { extend: 'excelHtml5'},
+              { extend: 'pdfHtml5', orientation: 'landscape'}
+          ],
+          processing: false,
+          serverSide: false,
+          ajax: {
+              "url": "{{ route('master.guru') }}",
+              "type": "get"
+          },
+          order: [[0, 'asc']],
+          columns: [
+              {data: 'no', name: 'no'},
+              {data: 'nama_lengkap', name: 'nama_lengkap'},
+              {data: 'nik', name: 'nik'},
+              {data: 'ttl', name: 'ttl'},
+              {data: 'alamat', name: 'alamat'},
+              {data: 'no_hp', name: 'no_hp'},
+              {data: 'pendidikan_terakhir', name: 'pendidikan_terakhir'},
+              {data: 'bidang_mengajar', name: 'bidang_mengajar'},
+              {data: 'no_sk', name: 'no_sk'},
+              {data: 'mulai_mengajar', name: 'mulai_mengajar'},
+              {data: 'status', name: 'status'},
+              {data: 'action', name: 'action'},
+          ],
+      });
+  });
 </script>
 @endsection

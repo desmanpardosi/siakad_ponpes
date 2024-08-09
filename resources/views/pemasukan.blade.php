@@ -118,7 +118,7 @@ $(function () {
                 d.td = $('input[name="daterange"]').data('daterangepicker').endDate.format('YYYY-MM-DD');
             }
         },
-        order: [[0, 'desc']],
+        order: [[0, 'asc']],
         columns: [
             {data: 'no', name: 'no'},
             {data: 'tanggal', name: 'tanggal'},

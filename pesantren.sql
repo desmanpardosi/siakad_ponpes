@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Waktu pembuatan: 06 Agu 2024 pada 03.05
+-- Waktu pembuatan: 09 Agu 2024 pada 16.00
 -- Versi server: 8.0.39-0ubuntu0.24.04.1
 -- Versi PHP: 8.2.21
 
@@ -33,24 +33,23 @@ CREATE TABLE `assets` (
   `nama_asset` varchar(50) NOT NULL,
   `jumlah` int NOT NULL DEFAULT '0',
   `tgl_buat` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `user_buat` varchar(50) NOT NULL,
-  `NA` enum('Y','N') CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT 'N'
+  `user_buat` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
 --
 -- Dumping data untuk tabel `assets`
 --
 
-INSERT INTO `assets` (`asset_id`, `ruangan_id`, `nama_asset`, `jumlah`, `tgl_buat`, `user_buat`, `NA`) VALUES
-(9, 1, 'Kursi', 0, '2024-08-01 10:40:20', 'superadmin', 'N'),
-(10, 1, 'Meja', 0, '2024-08-01 10:40:28', 'superadmin', 'N'),
-(11, 1, 'TV', 0, '2024-08-01 10:40:32', 'superadmin', 'N'),
-(12, 2, 'Kursi', 0, '2024-08-01 10:41:01', 'superadmin', 'N'),
-(13, 2, 'Meja', 0, '2024-08-01 10:41:05', 'superadmin', 'N'),
-(14, 1, 'Laptop', 0, '2024-08-01 10:41:13', 'superadmin', 'N'),
-(15, 2, 'Laptop', 0, '2024-08-01 10:41:19', 'superadmin', 'N'),
-(16, 1, 'Dispenser', 3, '2024-08-05 22:51:39', 'superadmin', 'N'),
-(17, 2, 'Dispenser', 1, '2024-08-05 22:58:12', 'superadmin', 'N');
+INSERT INTO `assets` (`asset_id`, `ruangan_id`, `nama_asset`, `jumlah`, `tgl_buat`, `user_buat`) VALUES
+(9, 1, 'Kursi', 0, '2024-08-01 10:40:20', 'superadmin'),
+(10, 1, 'Meja', 0, '2024-08-01 10:40:28', 'superadmin'),
+(11, 1, 'TV', 0, '2024-08-01 10:40:32', 'superadmin'),
+(12, 2, 'Kursi', 0, '2024-08-01 10:41:01', 'superadmin'),
+(13, 2, 'Meja', 0, '2024-08-01 10:41:05', 'superadmin'),
+(14, 1, 'Laptop', 0, '2024-08-01 10:41:13', 'superadmin'),
+(15, 2, 'Laptop', 0, '2024-08-01 10:41:19', 'superadmin'),
+(17, 2, 'Dispenser', 1, '2024-08-05 22:58:12', 'superadmin'),
+(18, 1, 'Dispenser', 1, '2024-08-06 22:50:13', 'superadmin');
 
 -- --------------------------------------------------------
 
@@ -100,7 +99,7 @@ INSERT INTO `jam_pelajaran` (`jp_id`, `hari`, `jam`, `NA`) VALUES
 (4, 0, '11.25-12.30', 'N'),
 (5, 0, '08.00-08.15', 'Y'),
 (6, 1, '08.00-08.15', 'Y'),
-(7, 0, '11.25-12.30', 'N');
+(7, 0, '11.25-12.30', 'Y');
 
 -- --------------------------------------------------------
 
@@ -207,7 +206,7 @@ CREATE TABLE `pemasukan_kategori` (
   `kategori` varchar(50) NOT NULL,
   `tgl_buat` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `user_buat` varchar(50) NOT NULL,
-  `NA` enum('Y','N') CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT 'N'
+  `NA` enum('Y','N') CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT 'N'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
 
 --
@@ -264,7 +263,7 @@ CREATE TABLE `pengumuman` (
 
 INSERT INTO `pengumuman` (`pengumuman_id`, `judul`, `deskripsi`, `tgl_buat`, `user_buat`, `NA`) VALUES
 (1, 'Tes', 'asdsadadad', '2024-08-05 20:59:37', NULL, 'Y'),
-(2, 'Libur Sekolah', 'Sekolah libur dari tanggal 07/08/20224 sampai dengan 10/08/2024.', '2024-08-05 21:16:04', 'superadmin', 'N');
+(2, 'Libur', 'Kegiatan belajar-mengajar libur dari tanggal 07/08/20224 sampai dengan 10/08/2024.', '2024-08-05 21:16:04', 'superadmin', 'N');
 
 -- --------------------------------------------------------
 
@@ -367,6 +366,27 @@ INSERT INTO `santri` (`santri_id`, `nis`, `nama_lengkap`, `nik`, `no_kk`, `tempa
 -- --------------------------------------------------------
 
 --
+-- Struktur dari tabel `settings`
+--
+
+CREATE TABLE `settings` (
+  `id_setting` bigint NOT NULL,
+  `setting_name` varchar(50) NOT NULL,
+  `setting_value` longtext CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
+
+--
+-- Dumping data untuk tabel `settings`
+--
+
+INSERT INTO `settings` (`id_setting`, `setting_name`, `setting_value`) VALUES
+(2, 'nama_yayasan', 'Yayasan Al Fatih Pasaman Barat'),
+(3, 'ketua_yayasan', 'Benni Aziz, S.Pd.'),
+(13, 'kota', 'Padang Tujuh');
+
+-- --------------------------------------------------------
+
+--
 -- Struktur dari tabel `staff`
 --
 
@@ -391,7 +411,7 @@ CREATE TABLE `staff` (
 --
 
 INSERT INTO `staff` (`staff_id`, `staff_type`, `nama_lengkap`, `nik`, `tempat_lahir`, `tgl_lahir`, `alamat`, `no_hp`, `pendidikan_terakhir`, `bidang_mengajar`, `no_sk`, `mulai_mengajar`, `status`) VALUES
-(9, 0, 'Desman Harianto Pardosi', '1971051512940001', 'Pangkalpinang', NULL, 'Perumahan Cahaya Indah Residence 17 No. 08, Jl. Anggrek, Kel. Tua Tunu Indah, Kec. Gerunggang', '0811666824', NULL, NULL, NULL, NULL, 0);
+(9, 0, 'Desman Harianto Pardosi', '1971051512940001', 'Pangkalpinang', '2024-08-06', 'Perumahan Cahaya Indah Residence 17 No. 08, Jl. Anggrek, Kel. Tua Tunu Indah, Kec. Gerunggang', '0811666824', NULL, NULL, NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -435,7 +455,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `name`, `role`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'superadmin', 'Super Admin', 0, '$2a$12$y6VnBvFXAVxp207MT6oMDOlxP1bXR8/dCWLgtjhl3vunC.791IAQG', 'Io3vmd7MOjaqNEEZHOina34TbZlv57DiXJ9XveloD4slgMtgxyBncJg12BCr', NULL, NULL),
+(1, 'superadmin', 'Super Admin', 0, '$2y$10$fDXHU0FfhFXkvnoiXo76Ju5Zb6CGgNT2eYQTMey5RIdX09KvSxMDO', 'Io3vmd7MOjaqNEEZHOina34TbZlv57DiXJ9XveloD4slgMtgxyBncJg12BCr', NULL, NULL),
 (5, 'admin', 'Admin', 1, '$2y$10$5fVRQuVavslEwTTf0e4oZuwhb53WmqhQ4fV.FZpYlHbWshQnOszdW', NULL, NULL, NULL),
 (6, '121112066', 'DHP', 3, '$2y$10$dbEmNnOnhD66onDUzHZ1d.U.iXjFnNm6D5suECJIb8BDsF2Ow43WO', NULL, NULL, NULL),
 (7, 'guru', 'Guru Bahasa Indonesia, S.Pd.', 2, '$2y$10$Yj2o7H7jU3Ele2k3jo6adOIleCZPDymJAlF9u0QfeDcVTAmaHCZ0.', NULL, NULL, NULL),
@@ -530,6 +550,12 @@ ALTER TABLE `santri`
   ADD PRIMARY KEY (`santri_id`);
 
 --
+-- Indeks untuk tabel `settings`
+--
+ALTER TABLE `settings`
+  ADD PRIMARY KEY (`id_setting`);
+
+--
 -- Indeks untuk tabel `staff`
 --
 ALTER TABLE `staff`
@@ -556,7 +582,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT untuk tabel `assets`
 --
 ALTER TABLE `assets`
-  MODIFY `asset_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `asset_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT untuk tabel `jadwal_pelajaran`
@@ -598,13 +624,13 @@ ALTER TABLE `nilai`
 -- AUTO_INCREMENT untuk tabel `pemasukan_kategori`
 --
 ALTER TABLE `pemasukan_kategori`
-  MODIFY `kategori_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `kategori_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT untuk tabel `pengeluaran_kategori`
 --
 ALTER TABLE `pengeluaran_kategori`
-  MODIFY `kategori_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `kategori_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT untuk tabel `pengumuman`
@@ -637,10 +663,16 @@ ALTER TABLE `santri`
   MODIFY `santri_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
+-- AUTO_INCREMENT untuk tabel `settings`
+--
+ALTER TABLE `settings`
+  MODIFY `id_setting` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+
+--
 -- AUTO_INCREMENT untuk tabel `staff`
 --
 ALTER TABLE `staff`
-  MODIFY `staff_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `staff_id` bigint NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT untuk tabel `tahun_pelajaran`

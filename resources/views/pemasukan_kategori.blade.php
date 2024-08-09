@@ -8,40 +8,21 @@
     </div>
   </div>
   <div class="widget-body">
-    <div class="widget-main no-padding">
+    <div class="widget-main">
       <table id="table" class="table table-striped table-bordered table-hover">
         <thead>
           <tr>
-            <th>{{ __('No') }}</th>
-            <th>{{ __('Kategori') }}</th>
-            <th>{{ __('Tgl. Buat') }}</th>
-            <th>{{ __('User') }}</th>
+            <th>No.</th>
+            <th>Kategori</th>
+            <th>Tanggal Buat</th>
+            <th>User Buat</th>
             <th></th>
           </tr>
         </thead>
-        <tbody>
-        @if(count($kategori) > 0)
-          @foreach($kategori as $key => $m)
-            <tr>
-              <td class="text-center">{{ $kategori->firstItem() + $key }}</td>
-              <td>{{ $m->kategori }}</td>
-              <td>{{ date("d/m/Y H:i:s", strtotime($m->tgl_buat)) }}</td>
-              <td>{{ $m->user_buat }}</td>
-              <td class="text-center"><button title="Edit" type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#tambah-data" onclick="editData({{ json_encode($kategori[$loop->iteration-1]) }})"><i class="fa fa-edit"></i></button> <button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick="deleteData({{ json_encode($kategori[$loop->iteration-1]) }})"><i class="fa fa-trash"></i></button></td>
-            </tr>
-          @endforeach
-        @else
-            <tr>
-                <td colspan="5">{{ __('Belum ada data') }}</td>
-            </tr>
-        @endif
-        </tfoot>
+        <tbody></tbody>
       </table>
     </div>
   </div>
-</div>
-<div class="float-right">
-  {{ $kategori->links("pagination::bootstrap-4") }}
 </div>
 <div class="modal fade" id="tambah-data">
   <div class="modal-dialog">
@@ -124,5 +105,41 @@
   function view(url){
       window.open(url, "_blank");
   }
+
+  $(function () {
+      $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+      }); 
+      
+      var table = $('#table').DataTable({
+          bAutoWidth: false,
+          oLanguage: {
+              sEmptyTable: "Belum ada data"
+          },
+          dom: 'Bfrtip',
+          columnDefs: [{ width: '8%', targets: [0,4] }],
+          responsive: true,
+          buttons: [
+              { extend: 'excelHtml5'},
+              { extend: 'pdfHtml5', orientation: 'potrait'}
+          ],
+          processing: false,
+          serverSide: false,
+          ajax: {
+              "url": "{{ route('master.pemasukan.kategori') }}",
+              "type": "get"
+          },
+          order: [[0, 'asc']],
+          columns: [
+              {data: 'no', name: 'no'},
+              {data: 'kategori', name: 'kategori'},
+              {data: 'tgl_buat', name: 'tgl_buat'},
+              {data: 'user_buat', name: 'user_buat'},
+              {data: 'action', name: 'action'},
+          ],
+      });
+  });
 </script>
 @endsection

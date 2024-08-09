@@ -22,6 +22,7 @@ Route::get('/transkrip-nilai', [App\Http\Controllers\DashboardController::class,
 
 Route::prefix('laporan')->group(function () {
     Route::get('keuangan', [App\Http\Controllers\DashboardController::class, 'laporan_keuangan'])->name('laporan.keuangan');
+    Route::post('download', [App\Http\Controllers\DashboardController::class, 'download_lap_keuangan'])->name('laporan.keuangan.download');
 });
 
 Route::prefix('master')->group(function () {

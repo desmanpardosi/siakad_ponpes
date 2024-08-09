@@ -7,6 +7,9 @@
 @section('content')
 <div class="widget-box">
   <div class="widget-header">
+    <div class="widget-toolbar no-border">
+      <button type="button" class="btn btn-xs btn-primary" data-toggle="modal" data-target="#download-data"><i class="fa fa-download"></i> Download Laporan</button>
+    </div>
   </div>
   <div class="widget-body">
     <div class="widget-main">
@@ -37,6 +40,77 @@
     </div>
   </div>
 </div>
+<div class="modal fade" id="download-data">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="blue bigger">Download Laporan</h4>
+      </div>
+      <div class="modal-body">
+          <form role="form" id="download" action="{{ route('laporan.keuangan.download') }}" method="post" enctype="multipart/form-data">
+            @csrf
+            <div class="form-group row">
+              <label for="jenis_lap" class="col-sm-4 col-form-label">Jenis Laporan</label>
+              <div class="col-sm-8">
+                <select class="form-control select2" style="width: 100%;" id="jenis_lap" name="jenis_lap" onchange="changeGroup()">
+                    <option>.:: Pilih Jenis Laporan ::.</option>
+                    <option value="0">Laporan Harian</option>
+                    <option value="1">Laporan Bulanan</option>
+                    <option value="2">Laporan Tahunan</option>
+                </select>
+              </div>
+            </div>
+            <div id="lap_harian" class="row" style="display:none;">
+              <div class="col-sm-4"></div>
+              <div class="col-sm-8">
+                <div class="input-group">
+                  <input class="form-control date-picker" id="lap_harian_start" name="lap_harian_start"  type="text" data-date-format="yyyy-mm-dd" autocomplete="off"/>
+                  <span class="input-group-addon">s/d</span>
+                  <input class="form-control date-picker" id="lap_harian_end" name="lap_harian_end"  type="text" data-date-format="yyyy-mm-dd" autocomplete="off"/>
+                </div>
+              </div>
+            </div>
+            <div id="lap_bulanan" class="row" style="display:none;">
+              <div class="col-sm-4"></div>
+              <div class="col-sm-8">
+                <div class="col-sm-6">
+                  <select class="form-control" style="width: 100%;" id="lap_bulanan_bulan" name="lap_bulanan_bulan">
+                    <option>.:: Pilih Bulan ::.</option>
+                    <option value="1">Januari</option>
+                    <option value="2">Februari</option>
+                    <option value="3">Maret</option>
+                    <option value="4">April</option>
+                    <option value="5">Mei</option>
+                    <option value="6">Juni</option>
+                    <option value="7">Juli</option>
+                    <option value="8">Agustus</option>
+                    <option value="9">September</option>
+                    <option value="10">Oktober</option>
+                    <option value="11">November</option>
+                    <option value="12">Desember</option>
+                  </select>
+                </div>
+                <div class="col-sm-6">
+                  <input class="form-control" id="lap_bulanan_tahun" name="lap_bulanan_tahun" type="text" placeholder="Tahun" value="{{ date('Y') }}"/>
+                </div>
+              </div>
+            </div>
+            <div id="lap_tahunan" class="row" style="display:none;">
+              <div class="col-sm-4"></div>
+              <div class="col-sm-8">
+                <input class="form-control" id="lap_tahunan_tahun" name="lap_tahunan_tahun" type="text" placeholder="Tahun" value="{{ date('Y') }}"/>
+              </div>
+            </div>
+          </form>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-default" data-dismiss="modal">{{ __('Batal') }}</button>
+        <button id="button-save" type="button" class="btn btn-primary" onclick="document.getElementById('download').submit();">Download</button>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
 @section('custom-js')
 <script src="{{ url('/assets/js/bootstrap-datepicker.min.js') }}"></script>
@@ -57,7 +131,21 @@
 <script src="{{ url('/plugins/pdfmake/vfs_fonts.js') }}"></script>
 <script src="{{ url('/plugins/jszip/jszip.min.js') }}"></script>
 <script>
-
+  function changeGroup(){
+    if($('#jenis_lap').val() == 0){
+      $('#lap_harian').show();
+      $('#lap_bulanan').hide();
+      $('#lap_tahunan').hide();
+    } else if($('#jenis_lap').val() == 1){
+      $('#lap_harian').hide();
+      $('#lap_bulanan').show();
+      $('#lap_tahunan').hide();
+    } else {
+      $('#lap_harian').hide();
+      $('#lap_bulanan').hide();
+      $('#lap_tahunan').show();
+    }
+  }
 $(function () {
     $.ajaxSetup({
       headers: {
@@ -85,7 +173,6 @@ $(function () {
         dom: 'Bfrtip',
         responsive: true,
         buttons: [
-
             { extend: 'csvHtml5', footer: true },
             { extend: 'pdfHtml5', footer: true }
         ],
@@ -141,17 +228,17 @@ $(function () {
 
             $(api.column(3).footer()).html(separator(pemasukan));
             $(api.column(4).footer()).html(separator(pengeluaran));
-
-        },
+        }
     });
+
     $(".filter").click(function(){
         table.ajax.reload();
     });
-  });
 
-  $('.date-picker').datepicker({
-    autoclose: true,
-    todayHighlight: true
-  })
+    $('.date-picker').datepicker({
+        autoclose: true,
+        todayHighlight: true
+    });
+});
 </script>
 @endsection

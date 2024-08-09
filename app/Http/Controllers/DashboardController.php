@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use DataTables;
+use Carbon\Carbon;
+
 
 class DashboardController extends Controller
 {
@@ -96,38 +98,80 @@ class DashboardController extends Controller
     }
 
     public function settings(Request $req){
-        return View::make('settings');
+        if(Auth::user()->role == 0 || Auth::user()->role == 1){
+            $nama_yayasan       = DB::table("settings")->where("setting_name", "nama_yayasan")->first()->setting_value;
+            $ketua_yayasan      = DB::table("settings")->where("setting_name", "ketua_yayasan")->first()->setting_value;
+            $kota               = DB::table("settings")->where("setting_name", "kota")->first()->setting_value;
+
+            return View::make('settings')->with(compact("nama_yayasan","ketua_yayasan","kota"));
+        } else {
+            return View::make('settings');
+        }
     }
 
     public function settings_save(Request $req){
-        $req->validate([
-            'pass'              => 'required|min:6',
-            'newpass'           => 'required|min:6|confirmed'
-            
-        ],
-        [
-            'pass.required'     => 'Password Lama belum diisi',
-            'pass.min'          => 'Password Lama minimal 6 karakter!',
-            'newpass.required'  => 'Password Baru belum diisi',
-            'newpass.min'       => 'Password Baru minimal 6 karakter!',
-            'newpass.confirmed' => 'Konfirmasi Password harus sama dengan Password Baru!',
-        ]);
+        if(empty($req->type) || $req->type == 0){
+            $req->validate([
+                'pass'              => 'required|min:6',
+                'newpass'           => 'required|min:6|confirmed'
+                
+            ],
+            [
+                'pass.required'     => 'Password Lama belum diisi',
+                'pass.min'          => 'Password Lama minimal 6 karakter!',
+                'newpass.required'  => 'Password Baru belum diisi',
+                'newpass.min'       => 'Password Baru minimal 6 karakter!',
+                'newpass.confirmed' => 'Konfirmasi Password harus sama dengan Password Baru!',
+            ]);
 
-        if(Hash::check($req->pass, Auth::user()->password)){
-            $data = [
-                "password"      => Hash::make($req->newpass)
-            ];
+            if(Hash::check($req->pass, Auth::user()->password)){
+                $data = [
+                    "password"      => Hash::make($req->newpass)
+                ];
 
-            $updatePass = DB::table('users')->where("id", Auth::user()->id)->update($data);
+                $updatePass = DB::table('users')->where("id", Auth::user()->id)->update($data);
 
-            if($updatePass){
-                $req->session()->flash('success', "Password berhasil diganti.");
+                if($updatePass){
+                    $req->session()->flash('success', "Password berhasil diganti.");
+                } else {
+                    $req->session()->flash('error', "Password gagal diganti!");
+                }
+
             } else {
-                $req->session()->flash('error', "Password gagal diganti!");
+                $req->session()->flash('error', "Password Lama salah!");
             }
-
         } else {
-            $req->session()->flash('error', "Password Lama salah!");
+            if(Auth::user()->role == 0 || Auth::user()->role == 1){
+                $req->validate([
+                    'nama_yayasan'  => 'required',
+                    'ketua_yayasan' => 'required',
+                    'kota'          => 'required',
+                    
+                ],
+                [
+                    'nama_yayasan.required'     => 'Nama Yayasan belum diisi!',
+                    'ketua_yayasan.required'    => 'Nama Ketua Yayasan belum diisi!',
+                    'kota.required'             => 'Kota belum diisi!',
+                ]);
+
+                $data = [
+                    "nama_yayasan"          => $req->nama_yayasan,
+                    "ketua_yayasan"         => $req->ketua_yayasan,
+                    "kota"                  => $req->kota,
+                    
+                ];
+        
+                foreach($data as $s => $val){
+                    $data = [
+                        "setting_value"=> $val,
+                        
+                    ];
+                    $update = DB::table('settings')->where("setting_name", $s)->update($data);
+                }
+                
+            } else {
+                $req->session()->flash('error', "Anda tidak memiliki hak akses untuk mengubah pengaturan!");
+            }
         }
 
         return redirect()->back();
@@ -365,23 +409,47 @@ class DashboardController extends Controller
 
     public function assets(Request $req)
     {
-        $ruangan = $req->ruangan;
+        if ($req->ajax()) {
+            $ruangan = $req->ruangan;
 
-        $assets = DB::table("assets")->select("assets.*", "ruangan.nama_ruangan")
-                    ->LeftJoin("ruangan", "ruangan.ruangan_id", "=", "assets.ruangan_id")
-                    ->where("assets.NA", "N");
+            $assets = DB::table("assets")->select("assets.*", "ruangan.nama_ruangan")
+                    ->LeftJoin("ruangan", "ruangan.ruangan_id", "=", "assets.ruangan_id");
 
-        if (!empty($ruangan)) {
-            $assets = $assets->where("assets.ruangan_id", $ruangan)
-                    ->orderBy("assets.asset_id", "desc")            
-                    ->paginate(25);
+            if (!empty($ruangan)) {
+                $assets = $assets->where("assets.ruangan_id", $ruangan)
+                        ->orderBy("assets.asset_id", "desc")            
+                        ->get();
 
-        } else {
-            $assets = $assets->orderBy("assets.asset_id", "desc")
-                    ->paginate(25);
+            } else {
+                $assets = $assets->orderBy("assets.asset_id", "desc")
+                        ->get();
+            }
+
+            $data   = [];
+            $no     = 1;
+            foreach($assets as $a){
+                $data[] = [
+                    'asset_id'          => $a->asset_id,
+                    'no'                => $no,
+                    'nama_ruangan'      => $a->nama_ruangan,
+                    'nama_asset'        => $a->nama_asset,
+                    'jumlah'            => $a->jumlah,
+                    'tgl_buat'          => date("d/m/Y", strtotime($a->tgl_buat))
+                ];
+                $no++;
+            }
+
+            return DataTables::of($data)
+                    ->addIndexColumn()
+                    ->addColumn('action', function($row){
+                        $btn    = '<center><button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick=\'deleteData('.json_encode($row).')\'><i class="fa fa-trash"></i></button></center>';
+                        return $btn;
+                    })
+                    ->rawColumns(['action'])
+                    ->make(true);
         }
 
-        return View::make('assets')->with(compact("assets"));
+        return View::make('assets');
     }
 
     public function asset_save(Request $req){
@@ -421,7 +489,7 @@ class DashboardController extends Controller
 
     public function asset_delete(Request $req)
     {
-        $update = DB::table('assets')->where("asset_id", $req->delete_id)->update(["NA" => "Y"]);
+        $update = DB::table('assets')->where("asset_id", $req->delete_id)->delete();
         if ($update) {
             $req->session()->flash('success', "Asset berhasil dihapus.");
         } else {
@@ -433,22 +501,51 @@ class DashboardController extends Controller
 
     public function guru(Request $req)
     {
-        $search = $req->search;
+        if($req->ajax()){
+            $guru = DB::table("staff")->select("staff.*")->where("staff.staff_type", 0)
+                    ->orderBy("staff.nama_lengkap", "asc")->get();
 
-        $guru = DB::table("staff")->select("staff.*")->where("staff.staff_type", 0);
-        if (!empty($search)) {
-            $guru = $guru->where("staff.nama_lengkap", "LIKE", "%" . $search . "%")
-                    ->orWhere("staff.nik", "LIKE", "%" . $search . "%")
-                    ->orWhere("staff.no_hp", "LIKE", "%" . $search . "%")
-                    ->orderBy("staff.nama_lengkap", "asc")            
-                    ->paginate(25);
 
-        } else {
-            $guru = $guru->orderBy("staff.nama_lengkap", "asc")
-                    ->paginate(25);
+            $data   = [];
+            $no     = 1;
+            foreach($guru as $d){
+                if($d->status == 0){
+                  $status = "Sertifikasi";
+                } else if($d->status == 1){
+                  $status = "Honorer";
+                } else {
+                  $status = "Lainnya";
+                }
+
+                $data[] = [
+                    'staff_id'              => $d->staff_id,
+                    'no'                    => $no,
+                    'nama_lengkap'          => $d->nama_lengkap,
+                    'nik'                   => $d->nik,
+                    'ttl'                   => $d->tempat_lahir.", ".date("d/m/Y", strtotime($d->tgl_lahir)),
+                    'alamat'                => $d->alamat,
+                    'no_hp'                 => $d->no_hp,
+                    'pendidikan_terakhir'   => $d->pendidikan_terakhir,
+                    'bidang_mengajar'       => $d->bidang_mengajar,
+                    'no_sk'                 => $d->no_sk,
+                    'mulai_mengajar'        => $d->mulai_mengajar,
+                    'status_code'           => $d->status,
+                    'status'                => $status,
+                ];
+                $no++;
+            }
+
+            return DataTables::of($data)
+                    ->addIndexColumn()
+                    ->addColumn('action', function($row){
+                        $btn    = '<center><button title="Hapus" type="button" class="btn btn-success btn-xs" data-toggle="modal" data-target="#tambah-data" onclick=\'editData('.json_encode($row).')\'><i class="fa fa-edit"></i></button> <button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick=\'deleteData('.json_encode($row).')\'><i class="fa fa-trash"></i></button></center>';
+                        return $btn;
+                    })
+                    ->rawColumns(['action'])
+                    ->make(true);
         }
 
-        return View::make('guru')->with(compact("guru"));
+        return View::make('guru');
     }
 
     public function staff(Request $req)
@@ -655,35 +752,47 @@ class DashboardController extends Controller
         return redirect()->back();
     }
 
-    public function pemasukan_kategori(Request $req)
-    {
+    public function pemasukan_kategori(Request $req){
 
         $kategori = DB::table("pemasukan_kategori")->select("pemasukan_kategori.*")
-                    ->where("NA", "N");
+                    ->where("NA", "N")
+                    ->orderBy("pemasukan_kategori.kategori", "asc")
+                    ->get();
 
         if ($req->format == "json") {
-            $kategori = $kategori->get();
             return response()->json($kategori);
         } else {
-            $search = $req->search;
-
-            if (!empty($search)) {
-                $kategori = $kategori->where("pemasukan_kategori.kategori", "LIKE", "%" . $search . "%")
-                        ->orderBy("pemasukan_kategori.kategori", "asc")            
-                        ->paginate(25);
-
-            } else {
-                $kategori = $kategori->orderBy("pemasukan_kategori.kategori", "asc")
-                        ->paginate(25);
+            if($req->ajax()){
+                $data   = [];
+                $no     = 1;
+                foreach($kategori as $d){
+                    $data[] = [
+                        'kategori_id'   => $d->kategori_id,
+                        'no'            => $no,
+                        'kategori'      => $d->kategori,
+                        'tgl_buat'      => date("d/m/Y", strtotime($d->tgl_buat)),
+                        'user_buat'     => $d->user_buat
+                    ];
+                    $no++;
+                }
+    
+                return DataTables::of($data)
+                        ->addIndexColumn()
+                        ->addColumn('action', function($row){
+                            $btn    = '<center><button title="Edit" type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#tambah-data" onclick=\'editData('.json_encode($row).')\'><i class="fa fa-edit"></i></button> <button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick=\'deleteData('.json_encode($row).')\'><i class="fa fa-trash"></i></button></center>';
+                            return $btn;
+                        })
+                        ->rawColumns(['action'])
+                        ->make(true);
             }
 
-            return View::make('pemasukan_kategori')->with(compact("kategori"));
+            return View::make('pemasukan_kategori');
         }
     }
 
     public function pemasukan_kategori_save(Request $req){
         $req->validate([
-            'kategori'    => 'required|unique:pemasukan_kategori,kategori'
+            'kategori'    => 'required'
             
         ],
         [
@@ -696,14 +805,24 @@ class DashboardController extends Controller
             "user_buat"     => Auth::user()->username,
         ];
 
-        $add = DB::table('pemasukan_kategori')->insertGetId($data);
+        if(empty($req->kategori_id)){
+            $add = DB::table('pemasukan_kategori')->insertGetId($data);
 
-        if($add){
-            $req->session()->flash('success', "Kategori Pemasukan berhasil ditambahkan.");
+            if($add){
+                $req->session()->flash('success', "Kategori Pemasukan berhasil ditambahkan.");
+            } else {
+                $req->session()->flash('error', "Kategori Pemasukan gagal ditambahkan!");
+            }
         } else {
-            $req->session()->flash('error', "Kategori Pemasukan gagal ditambahkan!");
+            $update = DB::table('pemasukan_kategori')->where("kategori_id", $req->kategori_id)->update($data);
+
+            if($update){
+                $req->session()->flash('success', "Kategori Pemasukan berhasil diperbarui.");
+            } else {
+                $req->session()->flash('error', "Kategori Pemasukan gagal diperbarui!");
+            }
         }
-        
+            
         return redirect()->back();
     }
 
@@ -788,36 +907,55 @@ class DashboardController extends Controller
         return redirect()->back();
     }
 
-    public function pengeluaran_kategori(Request $req)
-    {
+    public function pengeluaran_kategori(Request $req){
+
         $kategori = DB::table("pengeluaran_kategori")->select("pengeluaran_kategori.*")
-                    ->where("NA", "N");
+                    ->where("NA", "N")
+                    ->orderBy("pengeluaran_kategori.kategori", "asc")
+                    ->get();
 
         if ($req->format == "json") {
-            $kategori = $kategori->get();
             return response()->json($kategori);
         } else {
-            $search = $req->search;
+            if($req->ajax()){
+                $data   = [];
+                $no     = 1;
+                foreach($kategori as $d){
+                    if($d->jenis == 0){
+                        $jenis = "Dana Guru";
+                    } else {
+                        $jenis = "Dana Operasional";
+                    }
 
-            if (!empty($search)) {
-                $kategori = $kategori->where("pengeluaran_kategori.kategori", "LIKE", "%" . $search . "%")
-                        ->orderBy("pengeluaran_kategori.jenis", "asc")
-                        ->orderBy("pengeluaran_kategori.kategori", "asc")
-                        ->paginate(25);
-
-            } else {
-                $kategori = $kategori->orderBy("pengeluaran_kategori.jenis", "asc")
-                        ->orderBy("pengeluaran_kategori.kategori", "asc")
-                        ->paginate(25);
+                    $data[] = [
+                        'kategori_id'   => $d->kategori_id,
+                        'jenis_id'      => $d->jenis,
+                        'no'            => $no,
+                        'jenis'         => $jenis,
+                        'kategori'      => $d->kategori,
+                        'tgl_buat'      => date("d/m/Y", strtotime($d->tgl_buat)),
+                        'user_buat'     => $d->user_buat
+                    ];
+                    $no++;
+                }
+    
+                return DataTables::of($data)
+                        ->addIndexColumn()
+                        ->addColumn('action', function($row){
+                            $btn    = '<center><button title="Edit" type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#tambah-data" onclick=\'editData('.json_encode($row).')\'><i class="fa fa-edit"></i></button> <button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick=\'deleteData('.json_encode($row).')\'><i class="fa fa-trash"></i></button></center>';
+                            return $btn;
+                        })
+                        ->rawColumns(['action'])
+                        ->make(true);
             }
 
-            return View::make('pengeluaran_kategori')->with(compact("kategori"));
+            return View::make('pengeluaran_kategori');
         }
     }
 
     public function pengeluaran_kategori_save(Request $req){
         $req->validate([
-            'kategori'    => 'required|unique:pengeluaran_kategori,kategori'
+            'kategori'    => 'required'
             
         ],
         [
@@ -831,13 +969,22 @@ class DashboardController extends Controller
             "user_buat"     => Auth::user()->username,
         ];
 
-        $add = DB::table('pengeluaran_kategori')->insertGetId($data);
-
-        if($add){
-            $req->session()->flash('success', "Kategori Pengeluaran berhasil ditambahkan.");
+        if(empty($req->kategori_id)){
+            $add = DB::table('pengeluaran_kategori')->insertGetId($data);
+            if($add){
+                $req->session()->flash('success', "Kategori Pengeluaran berhasil ditambahkan.");
+            } else {
+                $req->session()->flash('error', "Kategori Pengeluaran gagal ditambahkan!");
+            }
         } else {
-            $req->session()->flash('error', "Kategori Pengeluaran gagal ditambahkan!");
+            $update = DB::table('pengeluaran_kategori')->where("kategori_id", $req->kategori_id)->update($data);
+            if($update){
+                $req->session()->flash('success', "Kategori Pengeluaran berhasil diperbarui.");
+            } else {
+                $req->session()->flash('error', "Kategori Pengeluaran gagal diperbarui!");
+            }
         }
+
         
         return redirect()->back();
     }
@@ -974,6 +1121,65 @@ class DashboardController extends Controller
         }
 
         return View::make('laporan_keuangan');
+    }
+
+    public function download_lap_keuangan(Request $req){
+        if($req->jenis_lap == 0){
+            $from       = $req->lap_harian_start;
+            $to         = $req->lap_harian_end;
+            $fd         = Carbon::parse($from)->locale('id');
+            $td         = Carbon::parse($to)->locale('id');
+            $today      = Carbon::parse(now())->locale('id');
+            $periode    = $fd->isoFormat('DD MMMM YYYY')." s/d ".$td->isoFormat('DD MMMM YYYY');
+            $today      = $today->isoFormat('DD MMMM YYYY');
+        } else if($req->jenis_lap == 1){
+            $namaBulan  =[1 => "Januari", 2 => "Februari", 3 => "Maret", 4 => "April", 5 => "Mei", 6 => "Juni", 7 => "Juli", 8 => "Agustus", 9 => "September",
+                            10 => "Oktober", 11 => "November", 12 => "Desember"];
+            $bulan      = $req->lap_bulanan_bulan;
+            $tahun      = $req->lap_bulanan_tahun;
+            $from       = $tahun."-".$bulan."-01";
+            $to         = $tahun."-".$bulan."-31";
+            $fd         = Carbon::parse($from)->locale('id');
+            $td         = Carbon::parse($to)->locale('id');
+            $today      = Carbon::parse(now())->locale('id');
+            $periode    = $namaBulan[$bulan]." ".$tahun;
+            $today      = $today->isoFormat('DD MMMM YYYY');
+        } else {
+            $tahun      = $req->lap_tahunan_tahun;
+            $from       = $tahun."-01-01";
+            $to         = $tahun."-12-31";
+            $fd         = Carbon::parse($from)->locale('id');
+            $td         = Carbon::parse($to)->locale('id');
+            $today      = Carbon::parse(now())->locale('id');
+            $periode    = "TAHUN ".$tahun;
+            $today      = $today->isoFormat('DD MMMM YYYY');
+        }
+
+
+        $kategori_pemasukan     = DB::table("pemasukan_kategori")->get();
+        $kategori_pengeluaran   = DB::table("pengeluaran_kategori")->get();
+        $nama_yayasan           = DB::table("settings")->where("setting_name", "nama_yayasan")->first()->setting_value;
+        $ketua_yayasan          = DB::table("settings")->where("setting_name", "ketua_yayasan")->first()->setting_value;
+        $kota                   = DB::table("settings")->where("setting_name", "kota")->first()->setting_value;
+
+
+        foreach($kategori_pemasukan as $k){
+            $k->total = DB::table("keuangan")->where([["kategori_id", $k->kategori_id], ["jenis", 0]])->whereBetween('tanggal', [$from, $to])->sum("nominal");
+        }
+
+        foreach($kategori_pengeluaran as $k){
+            $k->total = DB::table("keuangan")->where([["kategori_id", $k->kategori_id], ["jenis", 1]])->whereBetween('tanggal', [$from, $to])->sum("nominal");
+        }
+
+        if($kategori_pemasukan || $kategori_pengeluaran){
+            $pdf    = PDF::loadView('download_lapkeu', compact("kategori_pemasukan","kategori_pengeluaran","nama_yayasan","ketua_yayasan","kota","periode","today"));
+            $fn     = "lapkeu.pdf";
+            return $pdf->setPaper('A4')->download($fn);
+        } else {
+            $req->session()->flash('error', "Laporan belum tersedia!");
+        }
+
+        return redirect()->route("laporan_keuangan");
     }
 
     public function kelas(Request $req)
@@ -1278,7 +1484,8 @@ class DashboardController extends Controller
         $nama_hari = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu", "Minggu"];
 
         $jp = DB::table("jam_pelajaran")->select("jam_pelajaran.*")
-                ->where("jam_pelajaran.NA", "N");
+                ->where("jam_pelajaran.NA", "N")
+                ->orderBy("jam_pelajaran.hari", "asc")->orderBy("jam_pelajaran.jam", "asc");
 
         if ($req->format == "json") {
             $hari = $req->hari;
@@ -1295,13 +1502,36 @@ class DashboardController extends Controller
 
             return response()->json($jp);
         } else {
-            $jp = $jp->orderBy("jam_pelajaran.hari", "asc")->orderBy("jam_pelajaran.jam", "asc")->paginate(25);
+            if($req->ajax()){
+                $jp = $jp->get();
 
-            foreach($jp as $j){
-                $j->nama_hari = $nama_hari[$j->hari];
+                foreach($jp as $j){
+                    $j->nama_hari = $nama_hari[$j->hari];
+                }
+    
+                $data   = [];
+                $no     = 1;
+                foreach($jp as $d){
+                    $data[] = [
+                        'jp_id'         => $d->jp_id,
+                        'no'            => $no,
+                        'nama_hari'     => $d->nama_hari,
+                        'jam'           => $d->jam
+                    ];
+                    $no++;
+                }
+    
+                return DataTables::of($data)
+                        ->addIndexColumn()
+                        ->addColumn('action', function($row){
+                            $btn    = '<center><button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick=\'deleteData('.json_encode($row).')\'><i class="fa fa-trash"></i></button></center>';
+                            return $btn;
+                        })
+                        ->rawColumns(['action'])
+                        ->make(true);
             }
 
-            return View::make('jp')->with(compact("jp"));
+            return View::make('jp');
         }
     }
 
@@ -1346,23 +1576,50 @@ class DashboardController extends Controller
 
     public function jadwal(Request $req)
     {
-        $nama_hari = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu", "Minggu"];
+        if($req->ajax()){
+            $nama_hari = ["Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu", "Minggu"];
 
-        $jadwal = DB::table("jadwal_pelajaran")->select("tahun_pelajaran", "jadwal_pelajaran.*", "jam_pelajaran.*", "users.name", "mapel.*", "kelas.kelas_semester")
-                ->LeftJoin("tahun_pelajaran", "tahun_pelajaran.tahun_id", "=", "jadwal_pelajaran.tahun_id")
-                ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
-                ->LeftJoin("mapel", "mapel.mapel_id", "=", "jadwal_pelajaran.mapel_id")
-                ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
-                ->LeftJoin("users", "users.id", "=", "mapel.guru")
-                ->where("jadwal_pelajaran.NA", "N");
+            $jadwal = DB::table("jadwal_pelajaran")->select("tahun_pelajaran", "jadwal_pelajaran.*", "jam_pelajaran.*", "users.name", "mapel.*", "kelas.kelas_semester")
+                    ->LeftJoin("tahun_pelajaran", "tahun_pelajaran.tahun_id", "=", "jadwal_pelajaran.tahun_id")
+                    ->LeftJoin("jam_pelajaran", "jam_pelajaran.jp_id", "=", "jadwal_pelajaran.jp_id")
+                    ->LeftJoin("mapel", "mapel.mapel_id", "=", "jadwal_pelajaran.mapel_id")
+                    ->LeftJoin("kelas", "kelas.kelas_id", "=", "mapel.kelas_id")
+                    ->LeftJoin("users", "users.id", "=", "mapel.guru")
+                    ->where("jadwal_pelajaran.NA", "N")
+                    ->orderBy("jam_pelajaran.hari", "asc")
+                    ->orderBy("mapel.mapel", "asc")
+                    ->get();
 
-        $jadwal = $jadwal->orderBy("jam_pelajaran.hari", "asc")->orderBy("mapel.mapel", "asc")->paginate(25);
+            foreach($jadwal as $j){
+                $j->nama_hari = $nama_hari[$j->hari];
+            }
 
-        foreach($jadwal as $j){
-            $j->nama_hari = $nama_hari[$j->hari];
+            $data   = [];
+            $no     = 1;
+            foreach($jadwal as $d){
+                $data[] = [
+                    'no'                => $no,
+                    'tahun_pelajaran'   => $d->tahun_pelajaran,
+                    'hari'              => $nama_hari[$d->hari],
+                    'jam'               => $d->jam,
+                    'mapel'             => $d->mapel,
+                    'kelas'             => $d->kelas_semester,
+                    'guru'              => $d->name,
+                ];
+                $no++;
+            }
+
+            return DataTables::of($data)
+                    ->addIndexColumn()
+                    ->addColumn('action', function($row){
+                        $btn    = '<center><button title="Hapus" type="button" class="btn btn-danger btn-xs" data-toggle="modal" data-target="#del-data" onclick=\'deleteData('.json_encode($row).')\'><i class="fa fa-trash"></i></button></center>';
+                        return $btn;
+                    })
+                    ->rawColumns(['action'])
+                    ->make(true);
         }
 
-        return View::make('jadwal')->with(compact("jadwal"));
+        return View::make('jadwal');
     }
 
     public function jadwal_save(Request $req){

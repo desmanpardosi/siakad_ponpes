@@ -342,16 +342,6 @@
 						</li>
 						<li class="active">@yield('title')</li>
 					</ul>
-					@if(Route::current()->getName() == 'master.ruangan' || Route::current()->getName() == 'master.pemasukan.kategori' || Route::current()->getName() == 'master.pengeluaran.kategori' || Route::current()->getName() == 'master.santri' || Route::current()->getName() == 'master.guru' || Route::current()->getName() == 'master.staff' || Route::current()->getName() == 'master.users')
-					<div class="nav-search" id="nav-search">
-						<form class="form-search">
-							<span class="input-icon">
-								<input type="text" id="search" name="search" placeholder="Search ..." class="nav-search-input" id="nav-search-input" autocomplete="off" />
-								<i class="ace-icon fa fa-search nav-search-icon"></i>
-							</span>
-						</form>
-					</div>
-					@endif
 				</div>
 
 				<div class="page-content">
